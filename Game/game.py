@@ -19,8 +19,8 @@ class Game:
             self.screen.fill((240,240,240)) # Beige background
             
             self.player.move_controls()
-
-            self.screen.blit(self.player.sprite, (self.player.x, self.player.y))
+            self.player.update_sprite()
+            self.screen.blit(self.player.sprite, (self.player.x, self.player.y)) # Draw sprite 
              
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
