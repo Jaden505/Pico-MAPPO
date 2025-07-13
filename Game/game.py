@@ -19,6 +19,7 @@ class Game:
             self.screen.fill((240,240,240)) # Beige background
             
             self.player.move_controls()
+
             self.screen.blit(self.player.sprite, (self.player.x, self.player.y))
              
             for event in pygame.event.get():
