@@ -15,13 +15,12 @@ class Player:
         self.sprite = self.stand_right
         
         self.dt = dt
-        self.moving = [False, False]
         self.facing_left = False
         self.jumping = False
         
         self.x, self.y = init_pos[0], init_pos[1]
         self.vx, self.vy = 0, 0
-        self.acx, self.acy = 200, 150
+        self.acx, self.acy = 380, 150
         
         self.jump_gravity = 8
         
@@ -30,10 +29,10 @@ class Player:
         
         self.walk_cycle_len = len(self.walk_right)
         self.anim_timer = 0
-        self.anim_speed = 0.6  # seconds per frame
+        self.anim_speed = 0.5  # seconds per frame
         
     def update_sprite(self):
-        if not any(self.moving) and not self.jumping:
+        if self.vx == 0 and self.vy == 0 and not self.jumping:
             self.sprite = self.stand_left if self.facing_left else self.stand_right
         elif self.jumping:
             self.sprite = self.jump_left if self.facing_left else self.jump_right
@@ -49,37 +48,29 @@ class Player:
     def set_controls(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                self.moving[0] = True
+                self.vx = -self.acx * self.dt
                 self.facing_left = True
             elif event.key == pygame.K_RIGHT:
-                self.moving[1] = True
+                self.vx = self.acx * self.dt
                 self.facing_left = False
             elif event.key == pygame.K_SPACE and not self.jumping:
                 self.jumping = True
                 self.vy = -self.acy
-                self.move_controls(False)
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
-                self.moving[0] = False
+                self.vx = 0
             elif event.key == pygame.K_RIGHT:
-                self.moving[1] = False
+                self.vx = 0
 
         
     def move_controls(self, touching_ground):     
-        if self.moving[0]:
-            self.vx = -self.acx * self.dt
-        elif self.moving[1]:
-            self.vx = self.acx * self.dt
-        else:
-            self.vx = 0
-                        
+        self.x += self.vx * self.dt
+        self.y += self.vy * self.dt
+        
         if touching_ground:
             self.vy = 0
             self.jumping = False
-        else:
+        elif self.vy < self.acy:
             self.vy += self.jump_gravity
-                
-        self.x += self.vx * self.dt
-        self.y += self.vy * self.dt
             
