@@ -1,7 +1,7 @@
 import pygame
 
 class Player:
-    def __init__(self, init_pos, dt):
+    def __init__(self, init_pos):
         # Sprites
         self.stand_right = pygame.image.load('sprites/pico_stand.png')
         self.stand_left = pygame.transform.flip(self.stand_right, True, False)
@@ -14,30 +14,30 @@ class Player:
         
         self.sprite = self.stand_right
         
-        self.dt = dt
         self.facing_left = False
         self.jumping = False
         
         self.x, self.y = init_pos[0], init_pos[1]
         self.vx, self.vy = 0, 0
-        self.acx, self.acy = 380, 150
+        self.acx, self.acy = 10000, 800
         
-        self.jump_gravity = 8
+        self.jump_gravity = 40
         
         self.walk_cycle_ind = 0
         self.push_cycle_ind = 0
         
         self.walk_cycle_len = len(self.walk_right)
         self.anim_timer = 0
-        self.anim_speed = 0.5  # seconds per frame
+        self.anim_speed = 0.15  # seconds per frame
         
-    def update_sprite(self):
+        
+    def update_sprite(self, dt):
         if self.vx == 0 and self.vy == 0 and not self.jumping:
             self.sprite = self.stand_left if self.facing_left else self.stand_right
         elif self.jumping:
             self.sprite = self.jump_left if self.facing_left else self.jump_right
         else:
-            self.anim_timer += self.dt
+            self.anim_timer += dt
             
             if self.anim_timer > self.anim_speed:
                 self.sprite = self.walk_left[self.walk_cycle_ind] if self.facing_left else self.walk_right[self.walk_cycle_ind]
@@ -45,28 +45,28 @@ class Player:
                 self.anim_timer = 0
         
         
-    def set_controls(self, event):
+    def set_controls(self, event, dt):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                self.vx = -self.acx * self.dt
+                self.vx = -self.acx * dt
                 self.facing_left = True
-            elif event.key == pygame.K_RIGHT:
-                self.vx = self.acx * self.dt
+            if event.key == pygame.K_RIGHT:
+                self.vx = self.acx * dt
                 self.facing_left = False
-            elif event.key == pygame.K_SPACE and not self.jumping:
+            if event.key == pygame.K_SPACE and not self.jumping:
                 self.jumping = True
                 self.vy = -self.acy
 
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT:
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT and self.vx < 0:
                 self.vx = 0
-            elif event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_RIGHT and self.vx > 0:
                 self.vx = 0
 
         
-    def move_controls(self, touching_ground):     
-        self.x += self.vx * self.dt
-        self.y += self.vy * self.dt
+    def move_controls(self, touching_ground, dt):     
+        self.x += self.vx * dt
+        self.y += self.vy * dt
         
         if touching_ground:
             self.vy = 0
