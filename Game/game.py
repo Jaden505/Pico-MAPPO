@@ -1,5 +1,4 @@
 from player import Player
-from static_obstacle import StaticObstacle
 
 import pygame
 import sys
@@ -13,7 +12,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.player = Player((1100, 600))
         self.agents = [Player((900, 600)), Player((100, 600)), Player((500, 300))]
-        self.static_obstacles = [StaticObstacle(0, 700, 1200, 100), StaticObstacle(400, 600, 400, 200)]
+        self.static_obstacles = [pygame.Rect(0, 700, 1200, 100), pygame.Rect(400, 600, 400, 200)]
         
         self.sprite_width = self.player.sprite.get_width()
         self.sprite_height = self.player.sprite.get_height()
@@ -23,16 +22,18 @@ class Game:
         self.screen.blit(self.player.sprite, (self.player.x, self.player.y)) # Draw sprite 
         
         for g in self.static_obstacles:
-            pygame.draw.rect(self.screen, (245, 141, 86), g.rect) # Draw ground
+            pygame.draw.rect(self.screen, (245, 141, 86), g) # Draw ground
             
         for a in self.agents:
             self.screen.blit(a.sprite, (a.x, a.y)) # Draw sprite 
             
     def move_objects(self, dt):        
-        for a in (self.agents + [self.player]):
-            obstacles_and_players = self.static_obstacles + self.agents
-            a.move_and_collide(obstacles_and_players, dt)
-            a.update_sprite(dt)
+        agents_and_player = self.agents + [self.player]
+        
+        for ap in agents_and_player:
+            obstacles = self.static_obstacles + [x.rect for x in agents_and_player if x != ap]
+            ap.move_and_collide(obstacles, dt)
+            ap.update_sprite(dt)
         
     def run_game(self):
         while True:

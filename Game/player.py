@@ -17,17 +17,18 @@ class Player:
         self.width = self.sprite.get_width()
         self.height = self.sprite.get_height()
         
-        self.p_rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        
         # Orientation
         self.facing_left = False
         self.jumping = False
         
+        self.init_pos = init_pos
         self.x, self.y = init_pos[0], init_pos[1]
         self.vx, self.vy = 0, 0
         self.acx, self.acy = 10000, 800
         
         self.jump_gravity = 40
+        
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         
         # Extras
         self.walk_cycle_ind = 0 # Which run sprite image to show in sequence
@@ -88,10 +89,10 @@ class Player:
     def move_and_collide(self, static_obstacles,  dt):     
         # Horizontal collision
         self.x += self.vx * dt 
-        self.p_rect.x = self.x
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         
         for obs in static_obstacles:
-            if p_rect.colliderect(obs.rect): 
+            if self.rect.colliderect(obs): 
                 if self.vx > 0: # hit right wall
                     self.x = obs.left - self.width
 
@@ -106,9 +107,9 @@ class Player:
             
         self.y += self.vy * dt
                
-        self.p_rect.y = self.y
+        self.rect.y = self.y
         for obs in static_obstacles:
-            if p_rect.colliderect(obs.rect):   
+            if self.rect.colliderect(obs):   
                 if self.vy > 0: # hit floor
                     self.y = obs.top - self.height 
                     self.jumping = False
@@ -118,3 +119,6 @@ class Player:
                     self.jumping = False
                     
                 self.vy = 0
+                
+    def __eq__(self, value):
+        return self.init_pos == value
