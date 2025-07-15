@@ -14,6 +14,11 @@ class Player:
         
         self.sprite = self.stand_right
         
+        self.width = self.sprite.get_width()
+        self.height = self.sprite.get_height()
+        
+        self.p_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        
         # Orientation
         self.facing_left = False
         self.jumping = False
@@ -80,13 +85,36 @@ class Player:
             self.vx = 0
         
 
-    def update_position(self, touching_ground, dt):     
-        self.x += self.vx * dt
-        self.y += self.vy * dt
+    def move_and_collide(self, static_obstacles,  dt):     
+        # Horizontal collision
+        self.x += self.vx * dt 
+        self.p_rect.x = self.x
         
-        if touching_ground:
-            self.vy = 0
-            self.jumping = False
-        elif self.vy < self.acy:
+        for obs in static_obstacles:
+            if p_rect.colliderect(obs.rect): 
+                if self.vx > 0: # hit right wall
+                    self.x = obs.left - self.width
+
+                elif self.vx < 0: # hit left wall
+                    self.x = obs.right
+                
+                self.vx = 0
+                    
+        # Vertical collision     
+        if self.vy < self.acy: # apply jump gravity
             self.vy += self.jump_gravity
             
+        self.y += self.vy * dt
+               
+        self.p_rect.y = self.y
+        for obs in static_obstacles:
+            if p_rect.colliderect(obs.rect):   
+                if self.vy > 0: # hit floor
+                    self.y = obs.top - self.height 
+                    self.jumping = False
+                    
+                elif self.vy < 0: # hit ceiling
+                    self.y = obs.bottom
+                    self.jumping = False
+                    
+                self.vy = 0
