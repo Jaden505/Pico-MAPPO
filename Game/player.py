@@ -14,6 +14,7 @@ class Player:
         
         self.sprite = self.stand_right
         
+        # Orientation
         self.facing_left = False
         self.jumping = False
         
@@ -23,7 +24,8 @@ class Player:
         
         self.jump_gravity = 40
         
-        self.walk_cycle_ind = 0
+        # Extras
+        self.walk_cycle_ind = 0 # Which run sprite image to show in sequence
         self.push_cycle_ind = 0
         
         self.walk_cycle_len = len(self.walk_right)
@@ -45,7 +47,7 @@ class Player:
                 self.anim_timer = 0
         
         
-    def set_controls(self, event, dt):
+    def on_key_update(self, event, dt):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 self.vx = -self.acx * dt
@@ -62,9 +64,23 @@ class Player:
                 self.vx = 0
             if event.key == pygame.K_RIGHT and self.vx > 0:
                 self.vx = 0
-
+    
+                
+    def on_agent_input(self, key, dt):
+        if key == 'left':
+            self.vx = -self.acx * dt
+            self.facing_left = True
+        if key == 'right':
+            self.vx = self.acx * dt
+            self.facing_left = False
+        if key == 'jump' and not self.jumping:
+            self.jumping = True
+            self.vy = -self.acy            
+        if key == 'stand':
+            self.vx = 0
         
-    def move_controls(self, touching_ground, dt):     
+
+    def update_position(self, touching_ground, dt):     
         self.x += self.vx * dt
         self.y += self.vy * dt
         
