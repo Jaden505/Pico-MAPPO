@@ -58,9 +58,11 @@ class Player:
             if event.key == pygame.K_LEFT:
                 self.vx = -self.acx * dt
                 self.facing_left = True
+                
             if event.key == pygame.K_RIGHT:
                 self.vx = self.acx * dt
                 self.facing_left = False
+
             if event.key == pygame.K_SPACE and not self.jumping:
                 self.jumping = True
                 self.vy = -self.acy
@@ -70,7 +72,7 @@ class Player:
                 self.vx = 0
             if event.key == pygame.K_RIGHT and self.vx > 0:
                 self.vx = 0
-    
+                
                 
     def on_agent_input(self, key, dt):
         if key == 'left':
@@ -87,10 +89,10 @@ class Player:
         
 
     def move_and_collide(self, static_obstacles,  dt):     
-        # Horizontal collision
-        self.x += self.vx * dt 
+        self.x += self.vx * dt
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         
+        # Horizontal collision
         for obs in static_obstacles:
             if self.rect.colliderect(obs): 
                 if self.vx > 0: # hit right wall
@@ -98,16 +100,19 @@ class Player:
 
                 elif self.vx < 0: # hit left wall
                     self.x = obs.right
-                
-                self.vx = 0
                     
-        # Vertical collision     
+                self.rect.x = self.x
+                if self.rect.colliderect(obs):
+                    self.vx = 0
+                         
         if self.vy < self.acy: # apply jump gravity
             self.vy += self.jump_gravity
             
-        self.y += self.vy * dt
-               
+            
+        self.y += self.vy * dt       
         self.rect.y = self.y
+        
+        # Vertical collision
         for obs in static_obstacles:
             if self.rect.colliderect(obs):   
                 if self.vy > 0: # hit floor
