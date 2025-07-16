@@ -31,7 +31,7 @@ class Game:
         agents_and_player = self.agents + [self.player]
         
         for ap in agents_and_player:
-            obstacles = self.static_obstacles + [x.rect for x in agents_and_player if x != ap]
+            obstacles = self.static_obstacles + [x.foot_hitbox for x in agents_and_player if x != ap]
             ap.move_and_collide(obstacles, dt)
             ap.update_sprite(dt)
         

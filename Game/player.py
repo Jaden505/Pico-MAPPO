@@ -88,7 +88,7 @@ class Player:
             self.vx = 0
         
 
-    def move_and_collide(self, static_obstacles,  dt):     
+    def move_and_collide(self, static_obstacles, dt):     
         self.x += self.vx * dt
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         
@@ -124,6 +124,15 @@ class Player:
                     self.jumping = False
                     
                 self.vy = 0
+                
+    @property
+    def foot_hitbox(self):
+        return pygame.Rect(
+            self.rect.x + self.width/4,
+            self.rect.top,
+            self.rect.width/2.,
+            self.height
+        )
                 
     def __eq__(self, value):
         return self.init_pos == value
