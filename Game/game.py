@@ -11,7 +11,7 @@ class Game:
         self.screen = pygame.display.set_mode((1200, 800))
         self.clock = pygame.time.Clock()
         self.player = Player((1100, 600))
-        self.agents = [Player((900, 600)), Player((100, 600)), Player((500, 300))]
+        self.agents = [Player((900, 600), 'yellow'), Player((100, 600), 'red'), Player((500, 300), 'green')]
         self.static_obstacles = [pygame.Rect(0, 700, 1200, 100), pygame.Rect(400, 600, 400, 200)]
         
         self.sprite_width = self.player.sprite.get_width()
