@@ -23,3 +23,7 @@ def recolor_image(surface, color_map):
     del pxarray
     return surface
 
+def find_mutual_xcenter(player, agents):
+    total_x = player.x + sum(a.x for a in agents)
+    count = 1 + len(agents)
+    return total_x // count
