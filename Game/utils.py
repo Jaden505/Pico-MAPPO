@@ -27,3 +27,14 @@ def find_mutual_xcenter(player, agents):
     total_x = player.x + sum(a.x for a in agents)
     count = 1 + len(agents)
     return total_x // count
+
+def event_to_action(event, vx):
+    """Helper function to convert pygame events to player actions."""
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_LEFT: return 'left'
+        if event.key == pygame.K_RIGHT: return 'right'
+        if event.key == pygame.K_SPACE: return 'jump'
+    if event.type == pygame.KEYUP:
+        if event.key == pygame.K_LEFT and vx < 0: return 'stand'
+        if event.key == pygame.K_RIGHT and vx > 0: return 'stand'
+    return None

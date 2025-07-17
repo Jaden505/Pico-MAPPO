@@ -1,5 +1,5 @@
 from player import Player
-from utils import find_mutual_xcenter
+from utils import find_mutual_xcenter, event_to_action
 
 import pygame
 import sys
@@ -8,12 +8,18 @@ class Game:
     def __init__(self, headless_training=False):
         pygame.init()
         pygame.display.set_caption('Pico Park')
+        screen_width, screen_height = 1200, 800
         
-        self.screen = pygame.display.set_mode((1200, 800))
+        self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.clock = pygame.time.Clock()
-        self.player = Player((1100, 600))
-        self.agents = [Player((900, 600), 'yellow'), Player((100, 600), 'red'), Player((500, 300), 'green')]
-        self.static_obstacles = [pygame.Rect(0, 700, 1200, 100), pygame.Rect(400, 600, 400, 200)]
+        self.player = Player((1100, 400))
+        self.agents = [Player((900, 400), 'yellow'), Player((1000, 400), 'red'), Player((800, 400), 'green')]
+        self.static_obstacles = [
+            pygame.Rect(0, 700, 12000, 100), # Floor
+            ]
+        self.objectives = [
+            
+        ]
         
     def draw_objects(self, offset):
         self.screen.fill((240,240,240)) # Beige background
@@ -48,7 +54,8 @@ class Game:
                     pygame.quit()
                     sys.exit()
                     
-                self.player.on_key_update(event, dt)
+                action = event_to_action(event, self.player.vx)
+                self.player.handle_input(action, dt)
                     
             pygame.display.update()
             

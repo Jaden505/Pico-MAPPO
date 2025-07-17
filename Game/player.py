@@ -43,56 +43,27 @@ class Player:
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         
         # Extras
-        self.walk_cycle_ind = 0 # Which run sprite image to show in sequence
-        self.push_cycle_ind = 0
-        
+        self.cycle_ind = 0 # Which run sprite image to show in sequence
         self.cycle_len = len(self.walk_right)
         self.anim_timer = 0
         self.anim_speed = 0.15  # seconds per frame
         
         
     def update_sprite(self, dt):
-        if self.vx == 0 and self.vy == 0 and not self.jumping:
+        if self.vx == 0 and self.vy == 0 and not self.jumping: # standing still
             self.sprite = self.stand_left if self.facing_left else self.stand_right
+            
         elif self.jumping:
             self.sprite = self.jump_left if self.facing_left else self.jump_right
+            
         elif self.pushing:
-            self.anim_timer += dt
+            self.cycle_sprites(self.push_left if self.facing_left else self.push_right, dt)
             
-            if self.anim_timer > self.anim_speed:
-                self.sprite = self.push_left[self.push_cycle_ind] if self.facing_left else self.push_right[self.push_cycle_ind]
-                self.push_cycle_ind = self.push_cycle_ind+1 if self.push_cycle_ind < self.cycle_len-1 else 0
-                self.anim_timer = 0
-        else:
-            self.anim_timer += dt
-            
-            if self.anim_timer > self.anim_speed:
-                self.sprite = self.walk_left[self.walk_cycle_ind] if self.facing_left else self.walk_right[self.walk_cycle_ind]
-                self.walk_cycle_ind = self.walk_cycle_ind+1 if self.walk_cycle_ind < self.cycle_len-1 else 0
-                self.anim_timer = 0
-        
-    def on_key_update(self, event, dt):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                self.vx = -self.acx * dt
-                self.facing_left = True
-                
-            if event.key == pygame.K_RIGHT:
-                self.vx = self.acx * dt
-                self.facing_left = False
+        else: # walking
+            self.cycle_sprites(self.walk_left if self.facing_left else self.walk_right, dt)
 
-            if event.key == pygame.K_SPACE and not self.jumping:
-                self.jumping = True
-                self.vy = -self.acy
 
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT and self.vx < 0:
-                self.vx = 0
-            if event.key == pygame.K_RIGHT and self.vx > 0:
-                self.vx = 0
-                
-                
-    def on_agent_input(self, key, dt):
+    def handle_input(self, key, dt):
         if key == 'left':
             self.vx = -self.acx * dt
             self.facing_left = True
@@ -108,7 +79,7 @@ class Player:
 
     def move_and_collide(self, static_obstacles, dt):     
         self.x += self.vx * dt
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect.x = self.x
         
         self.pushing = False
         
@@ -130,7 +101,6 @@ class Player:
         if self.vy < self.acy: # apply jump gravity
             self.vy += self.jump_gravity
             
-            
         self.y += self.vy * dt       
         self.rect.y = self.y
         
@@ -146,7 +116,17 @@ class Player:
                     self.jumping = False
                     
                 self.vy = 0
-                
+                self.rect.y = self.y
+
+    def cycle_sprites(self, sprites, dt):
+        """Helper function to cycle through a list of sprites."""
+        self.anim_timer += dt
+        
+        if self.anim_timer > self.anim_speed:
+            self.sprite = sprites[self.cycle_ind]
+            self.cycle_ind = (self.cycle_ind + 1) % len(sprites)
+            self.anim_timer = 0
+          
     @property
     def foot_hitbox(self):
         return pygame.Rect(
