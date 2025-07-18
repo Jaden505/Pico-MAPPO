@@ -77,9 +77,12 @@ class Game:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 
             mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen.get_width() // 2)
+            xmin_limit = mutual_xcenter - self.screen.get_width() // 2
+            xmax_limit = mutual_xcenter + self.screen.get_width() // 2
+            print(xmin_limit, xmax_limit)
             
             self.draw_objects([mutual_xcenter, 0], dt)
-            self.move_objects(dt)
+            self.move_objects(dt, xmin_limit, xmax_limit)
             self.interact_object()
 
             for event in pygame.event.get():
