@@ -85,17 +85,17 @@ class Player:
         
         # Horizontal collision
         for obs in static_obstacles:
-            if self.rect.colliderect(obs): 
+            if self.foot_hitbox.colliderect(obs): 
                 if self.vx > 0: # hit right wall
-                    self.x = obs.left - self.width
+                    self.x = obs.left - self.width * 3/4
                     self.pushing = True
 
                 elif self.vx < 0: # hit left wall
-                    self.x = obs.right
+                    self.x = obs.right - self.width * 1/4
                     self.pushing = True
                     
                 self.rect.x = self.x
-                if self.rect.colliderect(obs):
+                if self.foot_hitbox.colliderect(obs):
                     self.vx = 0
                          
         if self.vy < self.acy: # apply jump gravity
@@ -106,9 +106,9 @@ class Player:
         
         # Vertical collision
         for obs in static_obstacles:
-            if self.rect.colliderect(obs):   
+            if self.foot_hitbox.colliderect(obs):   
                 if self.vy > 0: # hit floor
-                    self.y = obs.top - self.height 
+                    self.y = obs.top - self.height
                     self.jumping = False
                     
                 elif self.vy < 0: # hit ceiling

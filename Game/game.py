@@ -17,17 +17,16 @@ class Game:
         
         self.player = Player((1100, 400))
         self.agents = [Player((900, 400), 'yellow'), Player((1000, 400), 'red'), Player((800, 400), 'green')]
-        self.agents = []
         self.agents_and_player = self.agents + [self.player]
         
         self.static_obstacles = [
             pygame.Rect(0, 700, 5000, 100), # Floor
-            pygame.Rect(1400, 600, 500, 500), # Platform
-            pygame.Rect(1900, 600, 500, 2000), 
-            ]
+            pygame.Rect(1400, 600, 1000, 500), # Platform right
+            pygame.Rect(0, 0, 100, 800), # Left wall
+        ]
         
         self.door = Door((2100, 600))
-        self.key = Key((1200, 400))
+        self.key = Key((1200, 300))
         
     def draw_objects(self, offset, dt):
         self.screen.fill((240,240,240)) # Beige background
@@ -60,7 +59,7 @@ class Game:
                 
     def move_objects(self, dt):        
         for ap in self.agents_and_player:
-            obstacles = self.static_obstacles + [x.foot_hitbox for x in self.agents_and_player if x != ap]
+            obstacles = self.static_obstacles + [x.rect for x in self.agents_and_player if x != ap]
             ap.move_and_collide(obstacles, dt)
             ap.update_sprite(dt)
         
