@@ -77,7 +77,7 @@ class Player:
             self.vx = 0
         
 
-    def move_and_collide(self, static_obstacles, dt):     
+    def move_and_collide(self, static_obstacles, xmin_limit, xmax_limit, dt):     
         self.x += self.vx * dt
         self.rect.x = self.x
         
@@ -97,6 +97,9 @@ class Player:
                 self.rect.x = self.x
                 if self.foot_hitbox.colliderect(obs):
                     self.vx = 0
+                    
+        # Limit horizontal movement
+        self.x = max(xmin_limit, min(self.x, xmax_limit))
                          
         if self.vy < self.acy: # apply jump gravity
             self.vy += self.jump_gravity

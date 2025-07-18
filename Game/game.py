@@ -28,7 +28,7 @@ class Game:
             pygame.Rect(0, 0, 100, 800), # Left wall
         ]
         
-        self.door = Door((2100, 600))
+        self.door = Door((2300, 600))
         self.key = Key((1200, 600))
         # self.button = Button((1500, 600), self.static_obstacles[2], 'dissapear')
         self.button = Button((1500, 600), self.static_obstacles[3], 'appear', appear_height=200)
@@ -65,10 +65,10 @@ class Game:
             if a.rect.colliderect(self.button.rect) and not self.button.is_pressed:
                 self.button.toggle()
                 
-    def move_objects(self, dt):        
+    def move_objects(self, xmin_limit, xmax_limit, dt):        
         for ap in self.agents_and_player:
             obstacles = self.static_obstacles + [x.rect for x in self.agents_and_player if x != ap]
-            ap.move_and_collide(obstacles, dt)
+            ap.move_and_collide(obstacles, xmin_limit, xmax_limit, dt)
             ap.update_sprite(dt)
         
         
@@ -77,12 +77,12 @@ class Game:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 
             mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen.get_width() // 2)
-            xmin_limit = mutual_xcenter - self.screen.get_width() // 2
-            xmax_limit = mutual_xcenter + self.screen.get_width() // 2
-            print(xmin_limit, xmax_limit)
+            xmin_limit = mutual_xcenter 
+            xmax_limit = mutual_xcenter + self.screen.get_width()
+            print(xmin_limit, xmax_limit, mutual_xcenter)
             
             self.draw_objects([mutual_xcenter, 0], dt)
-            self.move_objects(dt, xmin_limit, xmax_limit)
+            self.move_objects(xmin_limit, xmax_limit, dt)
             self.interact_object()
 
             for event in pygame.event.get():
