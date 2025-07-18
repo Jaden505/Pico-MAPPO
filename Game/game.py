@@ -3,12 +3,13 @@ from utils import find_mutual_xcenter, event_to_action
 from entities.door import Door
 from entities.key import Key
 from entities.button import Button
+from levels import get_levels
 
 import pygame
 import sys
 
 class Game:
-    def __init__(self, headless_training=False):
+    def __init__(self, level_index):
         pygame.init()
         pygame.display.set_caption('Pico Park')
         screen_width, screen_height = 1200, 800
@@ -20,18 +21,12 @@ class Game:
         self.agents = [Player((900, 400), 'yellow'), Player((1000, 400), 'red'), Player((800, 400), 'green')]
         self.agents_and_player = self.agents + [self.player]
         
-        self.static_obstacles = [
-            pygame.Rect(0, 700, 5000, 100), # Floor
-            pygame.Rect(1400, 600, 1000, 500), # Platform right
-            pygame.Rect(500, 0, 100, 800), # Middle wall
-            pygame.Rect(1200, 600, 200, 0), # Bridge
-            pygame.Rect(0, 0, 100, 800), # Left wall
-        ]
-        
-        self.door = Door((2300, 600))
-        self.key = Key((1200, 600))
-        # self.button = Button((1500, 600), self.static_obstacles[2], 'dissapear')
-        self.button = Button((1500, 600), self.static_obstacles[3], 'appear', appear_height=200)
+        level = get_levels()[level_index]
+
+        self.static_obstacles = level["static_obstacles"]
+        self.door = level["door"]
+        self.key = level["key"]
+        self.button = level["button"]
         
     def draw_objects(self, offset, dt):
         self.screen.fill((240,240,240)) # Beige background
@@ -41,8 +36,12 @@ class Game:
             pygame.draw.rect(self.screen, (245, 141, 86), (g.x - offset[0], g.y - offset[1], g.width, g.height))
             
         self.door.draw(self.screen, offset)
-        self.key.draw(self.screen, offset, dt)
-        self.button.draw(self.screen, offset)
+       
+        if self.key:
+            self.key.draw(self.screen, offset, dt)
+       
+        if self.button:
+            self.button.draw(self.screen, offset)
             
         for a in self.agents_and_player:
             self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
@@ -51,18 +50,18 @@ class Game:
     def interact_object(self):
         for a in self.agents_and_player:
             
-            if a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
+            if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
                 self.key.collect(a)
                 a.has_key = True
             
-            if a.rect.colliderect(self.door.rect) and a.has_key: # Open door
+            if self.door and a.rect.colliderect(self.door.rect) and a.has_key: # Open door
                 self.door.toggle()
                 self.key.used = True
                 
             if a.rect.colliderect(self.door.rect) and self.door.is_open:
                 self.agents_and_player.remove(a)
                 
-            if a.rect.colliderect(self.button.rect) and not self.button.is_pressed:
+            if self.button and a.rect.colliderect(self.button.rect) and not self.button.is_pressed:
                 self.button.toggle()
                 
     def move_objects(self, xmin_limit, xmax_limit, dt):        
@@ -72,14 +71,13 @@ class Game:
             ap.update_sprite(dt)
         
         
-    def run_game(self):
+    def run_game(self, headless_training=False):
         while True:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 
             mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen.get_width() // 2)
             xmin_limit = mutual_xcenter 
             xmax_limit = mutual_xcenter + self.screen.get_width()
-            print(xmin_limit, xmax_limit, mutual_xcenter)
             
             self.draw_objects([mutual_xcenter, 0], dt)
             self.move_objects(xmin_limit, xmax_limit, dt)
@@ -93,10 +91,11 @@ class Game:
                 action = event_to_action(event, self.player.vx)
                 self.player.handle_input(action, dt)
                     
-            pygame.display.update()
+            if not headless_training:
+                pygame.display.update()
             
             if not self.agents_and_player:  # All agents have exited through the door
                 pygame.quit()
                 sys.exit()
             
-Game(headless_training=False).run_game()
+Game(0).run_game(headless_training=False)

@@ -47,6 +47,7 @@ class Player:
         self.cycle_len = len(self.walk_right)
         self.anim_timer = 0
         self.anim_speed = 0.15  # seconds per frame
+        self.has_key = False
         
         
     def update_sprite(self, dt):
