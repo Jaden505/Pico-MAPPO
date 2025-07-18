@@ -71,7 +71,7 @@ class Player:
         if key == 'right':
             self.vx = self.acx * dt
             self.facing_left = False
-        if key == 'jump' and not self.jumping:
+        if key == 'jump':
             self.jumping = True
             self.vy = -self.acy            
         if key == 'stand':

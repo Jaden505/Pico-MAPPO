@@ -1,10 +1,10 @@
 import pygame
 
 class Button:
-    def __init__(self, position, static_obstacle, appearence, appear_height=100):
+    def __init__(self, position, static_obstacle, mode='appear', appear_height=100):
         self.is_pressed = False
         self.static_obstacle = static_obstacle
-        self.appearance = appearence
+        self.mode = mode
         self.appear_height = appear_height
         
         left, bottom = position
@@ -28,7 +28,7 @@ class Button:
 
     def toggle(self):
         self.is_pressed = True
-        if self.appearance == 'dissapear':
+        if self.mode == 'dissapear':
             self.static_obstacle.height = 0
-        elif self.appearance == 'appear':
+        elif self.mode == 'appear':
             self.static_obstacle.height = self.appear_height

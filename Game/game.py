@@ -17,8 +17,14 @@ class Game:
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.clock = pygame.time.Clock()
         
-        self.player = Player((1100, 400))
-        self.agents = [Player((900, 400), 'yellow'), Player((1000, 400), 'red'), Player((800, 400), 'green')]
+        self.player = Player((100, 620))  # on floor (700 - 80)
+        self.agents = [
+            Player((200, 620), 'yellow'),
+            Player((300, 620), 'red'),
+            Player((400, 620), 'green')
+        ]
+        self.agents = []
+
         self.agents_and_player = self.agents + [self.player]
         
         level = get_levels()[level_index]
@@ -70,7 +76,10 @@ class Game:
             ap.move_and_collide(obstacles, xmin_limit, xmax_limit, dt)
             ap.update_sprite(dt)
         
-        
+            # Check if fallen off screen end game
+            if ap.y > self.screen.get_height():
+                self.exit()
+                
     def run_game(self, headless_training=False):
         while True:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
@@ -95,7 +104,10 @@ class Game:
                 pygame.display.update()
             
             if not self.agents_and_player:  # All agents have exited through the door
-                pygame.quit()
-                sys.exit()
+                self.exit()
+                
+    def exit(self):
+        pygame.quit()
+        sys.exit()
             
-Game(0).run_game(headless_training=False)
+Game(5).run_game(headless_training=False)
