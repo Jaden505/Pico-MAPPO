@@ -136,5 +136,5 @@ class Player:
             self.height
         )
                 
-    def __eq__(self, value):
+    def __eq__(self, value): # Differentiate between Players based on their initial position
         return self.init_pos == value

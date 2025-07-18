@@ -23,10 +23,14 @@ def recolor_image(surface, color_map):
     del pxarray
     return surface
 
-def find_mutual_xcenter(player, agents):
-    total_x = player.x + sum(a.x for a in agents)
-    count = 1 + len(agents)
-    return total_x // count
+def find_mutual_xcenter(player_agents):
+    """Find the mutual x center of all player agents."""
+    if not player_agents:
+        return 0
+
+    min_x = min(agent.x for agent in player_agents)
+    max_x = max(agent.x + agent.width for agent in player_agents)
+    return (min_x + max_x) // 2
 
 def event_to_action(event, vx):
     """Helper function to convert pygame events to player actions."""
