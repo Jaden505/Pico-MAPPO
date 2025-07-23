@@ -110,4 +110,4 @@ class Game:
         pygame.quit()
         sys.exit()
             
-Game(7).run_game(headless_training=False)
+Game(6).run_game(headless_training=False)

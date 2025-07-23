@@ -39,7 +39,7 @@ def get_levels():
     levels.append({
         "static_obstacles": [
             pygame.Rect(0, 700, 500, 100),
-            pygame.Rect(650, 700, 1500, 100)
+            pygame.Rect(600, 700, 1500, 100)
         ],
         "door": Door((2000, 700)),
         "key": Key((900, 620)),
