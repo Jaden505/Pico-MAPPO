@@ -32,3 +32,9 @@ class Key:
         self.holder = player
         player.has_key = True
         
+    @property
+    def get_position_on_screen(self, xmin, xmax):
+        if self.holder or self.used or self.rect.x < xmin or self.rect.x > xmax:
+                return [0, 0]
+        else:
+            return [self.rect.x, self.rect.y]

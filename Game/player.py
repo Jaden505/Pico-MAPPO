@@ -1,6 +1,7 @@
 from utils import recolor_image, PLAYER_COLOR_MAPS
 
 import pygame
+import uuid
 
 class Player:
     def __init__(self, init_pos, color='blue'):
@@ -36,7 +37,7 @@ class Player:
         self.init_pos = init_pos
         self.x, self.y = init_pos[0], init_pos[1]
         self.vx, self.vy = 0, 0
-        self.acx, self.acy = 10000, 800
+        self.acx, self.acy = 10000, 45000
         
         self.jump_gravity = 40
         
@@ -48,6 +49,7 @@ class Player:
         self.anim_timer = 0
         self.anim_speed = 0.15  # seconds per frame
         self.has_key = False
+        self.id = uuid.uuid4()
         
         
     def update_sprite(self, dt):
@@ -73,7 +75,7 @@ class Player:
             self.facing_left = False
         if key == 'jump' and not self.jumping:
             self.jumping = True
-            self.vy = -self.acy            
+            self.vy = -self.acy * dt           
         if key == 'stand':
             self.vx = 0
         
@@ -141,4 +143,4 @@ class Player:
         )
                 
     def __eq__(self, value): # Differentiate between Players based on their initial position
-        return self.init_pos == value
+        return self.id == value

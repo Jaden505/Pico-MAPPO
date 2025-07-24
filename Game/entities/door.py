@@ -23,3 +23,10 @@ class Door:
 
     def toggle(self):
         self.is_open = not self.is_open
+        
+    @property
+    def get_position_on_screen(self, xmin, xmax):
+        if self.rect.x < xmin or self.rect.x > xmax:
+                return [0, 0]
+        else:
+            return [self.rect.x, self.rect.y]

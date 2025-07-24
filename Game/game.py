@@ -12,9 +12,9 @@ class Game:
     def __init__(self, level_index):
         pygame.init()
         pygame.display.set_caption('Pico Park')
-        screen_width, screen_height = 1200, 800
+        self.screen_width, self.screen_height = 1200, 800
         
-        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
         
         self.player = Player((100, 620))  # on floor (700 - 80)
@@ -77,16 +77,16 @@ class Game:
             ap.update_sprite(dt)
         
             # Check if fallen off screen end game
-            if ap.y > self.screen.get_height():
+            if ap.y > self.screen_height:
                 self.exit()
                 
-    def run_game(self, headless_training=False):
+    def run_game(self):
         while True:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 
-            mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen.get_width() // 2)
+            mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen_width // 2)
             xmin_limit = mutual_xcenter 
-            xmax_limit = mutual_xcenter + self.screen.get_width()
+            xmax_limit = mutual_xcenter + self.screen_width
             
             self.draw_objects([mutual_xcenter, 0], dt)
             self.move_objects(xmin_limit, xmax_limit, dt)
@@ -100,8 +100,7 @@ class Game:
                 action = event_to_action(event, self.player.vx)
                 self.player.handle_input(action, dt)
                     
-            if not headless_training:
-                pygame.display.update()
+            pygame.display.update()
             
             if not self.agents_and_player:  # All agents have exited through the door
                 self.exit()
@@ -110,4 +109,4 @@ class Game:
         pygame.quit()
         sys.exit()
             
-Game(6).run_game(headless_training=False)
+Game(6).run_game()
