@@ -109,4 +109,4 @@ class Game:
         pygame.quit()
         sys.exit()
             
-Game(6).run_game()
+Game(5).run_game()

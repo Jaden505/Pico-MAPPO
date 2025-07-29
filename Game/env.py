@@ -1,5 +1,5 @@
 from player import Player
-from utils import find_mutual_xcenter, normalize_state_agents, normalize_state_obstacles, normalize_state_interactables 
+from utils import *
 from levels import get_levels
 
 import pygame
@@ -29,22 +29,29 @@ class Game:
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        
+        self.done = False
+        self.reward = 0
             
             
     def interact_object(self, a):
         if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
             self.key.collect(a)
             a.has_key = True
+            self.reward += 3
         
         if self.door and a.rect.colliderect(self.door.rect) and a.has_key: # Open door
             self.door.toggle()
             self.key.used = True
+            self.reward += 4
             
-        if a.rect.colliderect(self.door.rect) and self.door.is_open:
+        if a.rect.colliderect(self.door.rect) and self.door.is_open: # Exit through door
             self.agents.remove(a)
+            self.reward += 4
             
-        if self.button and a.rect.colliderect(self.button.rect) and not self.button.is_pressed:
+        if self.button and a.rect.colliderect(self.button.rect) and not self.button.is_pressed: # Press button
             self.button.toggle()
+            self.reward += 3
        
                 
     def move_objects(self, xmin_limit, xmax_limit, dt):        
@@ -56,13 +63,7 @@ class Game:
             # Check if fallen off screen end game
             if ap.y > self.screen_height:
                 self.done = True
-
-    
-    def normalize_xposition(self, x, xmin, xmax):
-        return (x - xmin) / (xmax - xmin) 
-    
-    def normalize_yposition(self, y):
-        return y / self.screen_height 
+                
     
     def get_state(self, xmin_limit, xmax_limit):
         state_obstacles = []
@@ -89,7 +90,7 @@ class Game:
             normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height)
         ]
                 
-    def step(self, agent_id, defined_action):
+    def step(self, agent_id, defined_action=None):
         dt = self.clock.tick(60) / 1000 # seconds since last frame
         agent = [a for a in self.agents if a.id == agent_id][0]
 
@@ -99,15 +100,43 @@ class Game:
         
         state = self.get_state()
         action = random.choice(self.agent_actions) if not defined_action else defined_action
-        reward = self.get_policy_reward()
+        reward = self.get_policy_reward(agent)
         
         agent.handle_input(action, dt)
         
         self.move_objects(xmin_limit, xmax_limit, dt)
         self.interact_object()
         
+        self.reward -= 0.1  # Small penalty for each step taken
+        self.reward += max(1, agent.x / self.door.position[0])  # Reward based on distance to door
+        
         if not self.agents:  # All agents have exited through the door
             self.done = True
             
+            if all([a.y < self.screen_height for a in self.agents]):
+                self.reward += 10 # Bonus for all agents exiting
+            
         return state, action, reward, self.done
             
+            
+    def reset(self, level_index):
+        self.done = False
+        self.reward = 0
+        level = get_levels()[level_index]
+        
+        self.static_obstacles = level["static_obstacles"]
+        self.door = level["door"]
+        self.key = level["key"]
+        self.button = level["button"]
+        
+        # Reset agents
+        self.agents = [
+            Player((100, 620)), # blue
+            Player((200, 620), 'yellow'),
+            Player((300, 620), 'red'),
+            Player((400, 620), 'green')
+        ]
+       
+        
+        
+        

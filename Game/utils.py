@@ -90,3 +90,9 @@ def normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, s
             ]
             normalized.append(normalized_interactable)
     return normalized
+
+def normalize_xposition(self, x, xmin, xmax):
+    return (x - xmin) / (xmax - xmin) 
+
+def normalize_yposition(self, y):
+    return y / self.screen_height 

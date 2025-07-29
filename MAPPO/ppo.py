@@ -23,16 +23,17 @@ class PPO:
          
          t = 0
          while t < self.timesteps_per_batch:
-                self.env.reset()
+                self.env.reset(self.env.level_index)
                 
-                for ep_t in range(self.max_time_steps_per_episode):
-                    state, action, reward, done = self.env.step()
-                    
-                    states.append(state)
-                    actions.append(action)
-                    rewards.append(reward)
-            
-                    if done:
-                        break
+                for agent in self.env.agents:
+                    for ep_t in range(self.max_time_steps_per_episode):
+                        state, action, reward, done = self.env.step(agent.id)
+                        
+                        states.append(state)
+                        actions.append(action)
+                        rewards.append(reward)
+                
+                        if done:
+                            break
             
          
