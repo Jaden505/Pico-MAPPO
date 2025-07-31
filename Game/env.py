@@ -1,11 +1,10 @@
-from player import Player
-from utils import *
-from levels import get_levels
+from Game.player import Player
+from Game.utils import *
+from Game.levels import get_levels
 
 import pygame
-import random
 
-class Game:
+class Environment:
     def __init__(self, level_index):
         pygame.init()
         pygame.display.set_caption('Pico Park')
@@ -20,8 +19,10 @@ class Game:
             Player((300, 620), 'red'),
             Player((400, 620), 'green')
         ]
-        self.agents = []
+        
         self.agent_actions = ['stand', 'jump', 'left', 'right']
+        self.state_space_shape = (10, 4, 3)  # obstacles, agents, interactables
+        self.action_space_shape = len(self.agent_actions)
         
         level = get_levels()[level_index]
 

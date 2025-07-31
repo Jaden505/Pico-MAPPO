@@ -1,10 +1,10 @@
-from actorcritic import ActorCritic
+from MAPPO.actorcritic import ActorCritic
 
 class PPO:
     def __init__(self, env):
         self.env = env
-        self.state_dim = env.state_space.shape()
-        self.action_dim = env.action_space.shape()
+        self.state_dim = env.state_space_shape
+        self.action_dim = env.action_space_shape
         
         self.actor = ActorCritic(self.state_dim, self.action_dim)
         self.critic = ActorCritic(self.state_dim, 1)
@@ -19,30 +19,27 @@ class PPO:
         states = []
         actions = []
         rewards = []
-        timesteps = []
         
         t = 0
         while t < self.timesteps_per_batch:
             self.env.reset(self.env.level_index)
             
-            for agent in self.env.agents:
-                for ep_t in range(self.max_timesteps_per_episode):
-                    
+            for ep_t in range(self.max_timesteps_per_episode):
+                for agent in self.env.agents:
+                
                     state = self.env.get_state(agent.id)
-                    action_probs = self.actor.forward(state)
+                    action_logits = self.actor.forward(state)
+                    action_probs = self.actor.softmax(action_logits)
                     action, reward, done = self.env.step(agent.id, action_probs)
                     
                     states.append(state)
-                    actions.append(action)
+                    actions.append(action_logits)
                     rewards.append(reward)
-                    timesteps.append(ep_t)
-            
-                    if done:
-                        break
         
-            t = len(timesteps)
-                    
-        return states, actions, rewards, timesteps
-    
-    
+                if done:
+                    break
+                
+                t += 1
+        
+        return states, actions, rewards
     

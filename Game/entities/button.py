@@ -16,8 +16,8 @@ class Button:
             img = pygame.image.load(path).convert_alpha()
             return pygame.transform.scale(img, (width, height))
         
-        self.button = load_sprite('sprites/button.png')
-        self.button_pressed = load_sprite('sprites/button_pressed.png')
+        self.button = load_sprite('Game/sprites/button.png')
+        self.button_pressed = load_sprite('Game/sprites/button_pressed.png')
         self.rect = pygame.Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):

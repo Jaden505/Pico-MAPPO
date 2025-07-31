@@ -1,9 +1,9 @@
-from player import Player
-from utils import find_mutual_xcenter, event_to_action
-from entities.door import Door
-from entities.key import Key
-from entities.button import Button
-from levels import get_levels
+from Game.player import Player
+from Game.utils import find_mutual_xcenter, event_to_action
+from Game.entities.door import Door
+from Game.entities.key import Key
+from Game.entities.button import Button
+from Game.levels import get_levels
 
 import pygame
 import sys

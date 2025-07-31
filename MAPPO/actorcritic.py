@@ -3,7 +3,9 @@ import torch
 
 class ActorCritic(nn.Module):
     def __init__(self, in_dim, out_dim):
-        super.__init__()
+        super().__init__()
+        
+        print(f"Initializing ActorCritic with input dimension {in_dim} and output dimension {out_dim}")
         
         self.flatten = nn.Flatten()
         self.model = nn.Sequential(

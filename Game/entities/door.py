@@ -11,8 +11,8 @@ class Door:
             img = pygame.image.load(path).convert_alpha()
             return pygame.transform.scale(img, (width, height))
         
-        self.sprite_closed = load_sprite('sprites/door_closed.png')
-        self.sprite_open = load_sprite('sprites/door_open.png')
+        self.sprite_closed = load_sprite('Game/sprites/door_closed.png')
+        self.sprite_open = load_sprite('Game/sprites/door_open.png')
         self.rect = pygame.Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):

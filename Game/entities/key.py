@@ -5,7 +5,7 @@ class Key:
         self.position = position
         width, height = 65, 80
         
-        self.sprite = pygame.image.load('sprites/key.png').convert_alpha()
+        self.sprite = pygame.image.load('Game/sprites/key.png').convert_alpha()
         self.sprite = pygame.transform.scale(self.sprite, (width, height))
         
         self.rect = pygame.Rect(position[0], position[1], width, height)

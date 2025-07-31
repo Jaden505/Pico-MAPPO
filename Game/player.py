@@ -1,4 +1,4 @@
-from utils import recolor_image, PLAYER_COLOR_MAPS
+from Game.utils import recolor_image, PLAYER_COLOR_MAPS
 
 import pygame
 import uuid
@@ -12,16 +12,16 @@ class Player:
             img = pygame.image.load(path).convert_alpha()
             return recolor_image(img, color_map)
         
-        self.stand_right = load_and_recolor('sprites/pico_stand.png')
+        self.stand_right = load_and_recolor('Game/sprites/pico_stand.png')
         self.stand_left = pygame.transform.flip(self.stand_right, True, False)
         
-        self.walk_right = [load_and_recolor(f'sprites/pico_move{i}.png') for i in range(1, 5)]
+        self.walk_right = [load_and_recolor(f'Game/sprites/pico_move{i}.png') for i in range(1, 5)]
         self.walk_left = [pygame.transform.flip(img, True, False) for img in self.walk_right]
         
-        self.push_right = [load_and_recolor(f'sprites/pico_push{i}.png') for i in range(1, 5)]
+        self.push_right = [load_and_recolor(f'Game/sprites/pico_push{i}.png') for i in range(1, 5)]
         self.push_left = [pygame.transform.flip(img, True, False) for img in self.push_right]
         
-        self.jump_right = load_and_recolor('sprites/pico_jump.png')
+        self.jump_right = load_and_recolor('Game/sprites/pico_jump.png')
         self.jump_left = pygame.transform.flip(self.jump_right, True, False)
         
         self.sprite = self.stand_right

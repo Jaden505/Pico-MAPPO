@@ -1,7 +1,7 @@
 import pygame
-from entities.door import Door
-from entities.key import Key
-from entities.button import Button
+from Game.entities.door import Door
+from Game.entities.key import Key
+from Game.entities.button import Button
 
 def get_levels():
     levels = []
