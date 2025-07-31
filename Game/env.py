@@ -63,6 +63,7 @@ class Game:
             # Check if fallen off screen end game
             if ap.y > self.screen_height:
                 self.done = True
+                self.reward -= 5  # Penalty for dying
                 
     
     def get_state(self, xmin_limit, xmax_limit):
@@ -76,21 +77,28 @@ class Game:
                 clipped_obj = [max(xmin_limit, obj.left), min(xmax_limit, obj.right), obj.top, obj.bottom]
                 state_obstacles.append(clipped_obj)
                 
+        for i in range(len(state_obstacles), 10):  # Pad with empty obstacles if less than 10
+            state_obstacles.append([0, 0, 0, 0])
+                
         # Get agents data
         for a in self.agents:
             state_agents.append([a.id, a.x, a.y, a.vx, a.vy, a.is_jumping, a.has_key])
             
+        for i in range(len(state_agents), 4):  # Pad with empty agents if less than 4
+            state_agents.append([i, 0, 0, 0, 0, 0, 0])
+        
+        # Get interactables data
         state_interactables.append(self.door.positionxy + [self.door.is_open])
-        state_interactables.append(self.button.positionxy)
-        state_interactables.append(self.key.positionxy)
-            
+        state_interactables.append((self.button.positionxy + [self.button.is_pressed]) if self.button else [0, 0, 0])
+        state_interactables.append([self.key.positionxy] if self.key else [0, 0, 0])
+        
         return [
-            normalize_state_obstacles(state_obstacles, xmin_limit, xmax_limit, self.screen_height),
-            normalize_state_agents(state_agents, xmin_limit, xmax_limit, self.screen_height),
-            normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height)
+            normalize_state_obstacles(state_obstacles, xmin_limit, xmax_limit, self.screen_height), # shape 10
+            normalize_state_agents(state_agents, xmin_limit, xmax_limit, self.screen_height), # shape 4
+            normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height) # shape 3
         ]
                 
-    def step(self, agent_id, defined_action=None):
+    def step(self, agent_id, action_probs):
         dt = self.clock.tick(60) / 1000 # seconds since last frame
         agent = [a for a in self.agents if a.id == agent_id][0]
 
@@ -98,10 +106,9 @@ class Game:
         xmin_limit = mutual_xcenter 
         xmax_limit = mutual_xcenter + self.screen_width
         
-        state = self.get_state()
-        action = random.choice(self.agent_actions) if not defined_action else defined_action
         reward = self.get_policy_reward(agent)
         
+        action = self.agent_actions[action_probs.argmax()]
         agent.handle_input(action, dt)
         
         self.move_objects(xmin_limit, xmax_limit, dt)
@@ -116,7 +123,7 @@ class Game:
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
             
-        return state, action, reward, self.done
+        return action, reward, self.done
             
             
     def reset(self, level_index):
@@ -137,6 +144,3 @@ class Game:
             Player((400, 620), 'green')
         ]
        
-        
-        
-        

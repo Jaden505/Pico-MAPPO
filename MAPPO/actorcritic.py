@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 class ActorCritic(nn.Module):
     def __init__(self, in_dim, out_dim):
@@ -6,8 +7,11 @@ class ActorCritic(nn.Module):
         
         self.flatten = nn.Flatten()
         self.model = nn.Sequential(
-            nn.Linear(in_dim, out_dim),
+            nn.Linear(in_dim, 256),
             nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, out_dim)
         )
     
     def forward(self, x):
@@ -15,4 +19,6 @@ class ActorCritic(nn.Module):
         logits = self.model(x)
         return logits
     
-    
+    def softmax(self, logits):
+        exp_logits = torch.exp(logits)
+        return exp_logits / torch.sum(exp_logits, dim=-1, keepdim=True)
