@@ -27,7 +27,7 @@ class PPO:
             for ep_t in range(self.max_timesteps_per_episode):
                 for agent in self.env.agents:
                 
-                    state = self.env.get_state(agent.id)
+                    state = self.env.get_state()
                     action_logits = self.actor.forward(state)
                     action_probs = self.actor.softmax(action_logits)
                     action, reward, done = self.env.step(agent.id, action_probs)

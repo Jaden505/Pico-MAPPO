@@ -33,8 +33,5 @@ class Key:
         player.has_key = True
         
     @property
-    def positionxy(self, xmin, xmax):
-        if self.holder or self.used or self.rect.x < xmin or self.rect.x > xmax:
-                return [0, 0]
-        else:
-            return [self.rect.x, self.rect.y]
+    def positionxy(self):
+        return [self.rect.x, self.rect.y]

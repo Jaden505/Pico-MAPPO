@@ -1,8 +1,5 @@
 from Game.player import Player
-from Game.utils import find_mutual_xcenter, event_to_action
-from Game.entities.door import Door
-from Game.entities.key import Key
-from Game.entities.button import Button
+from Game.utils import find_outer_x_limits, event_to_action
 from Game.levels import get_levels
 
 import pygame
@@ -23,7 +20,6 @@ class Game:
             Player((300, 620), 'red'),
             Player((400, 620), 'green')
         ]
-        self.agents = []
 
         self.agents_and_player = self.agents + [self.player]
         
@@ -75,7 +71,7 @@ class Game:
             obstacles = self.static_obstacles + [x.rect for x in self.agents_and_player if x != ap]
             ap.move_and_collide(obstacles, xmin_limit, xmax_limit, dt)
             ap.update_sprite(dt)
-        
+                    
             # Check if fallen off screen end game
             if ap.y > self.screen_height:
                 self.exit()
@@ -84,14 +80,12 @@ class Game:
         while True:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 
-            mutual_xcenter = find_mutual_xcenter(self.agents_and_player) - (self.screen_width // 2)
-            xmin_limit = mutual_xcenter 
-            xmax_limit = mutual_xcenter + self.screen_width
+            xmin_limit, xmax_limit = find_outer_x_limits(self.agents_and_player, self.screen_width)
             
-            self.draw_objects([mutual_xcenter, 0], dt)
+            self.draw_objects((xmin_limit, 0), dt)
             self.move_objects(xmin_limit, xmax_limit, dt)
             self.interact_object()
-
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -99,14 +93,13 @@ class Game:
                     
                 action = event_to_action(event, self.player.vx)
                 self.player.handle_input(action, dt)
-                    
-            pygame.display.update()
-            
+                
             if not self.agents_and_player:  # All agents have exited through the door
                 self.exit()
+                
+            pygame.display.flip()
                 
     def exit(self):
         pygame.quit()
         sys.exit()
             
-Game(5).run_game()

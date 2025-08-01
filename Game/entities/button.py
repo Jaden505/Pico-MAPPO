@@ -34,8 +34,5 @@ class Button:
             self.static_obstacle.height = self.appear_height
             
     @property
-    def positionxy(self, xmin, xmax):
-        if self.is_pressed or self.rect.x < xmin or self.rect.x > xmax:
-                return [0, 0]
-        else:
-            return [self.rect.x, self.rect.y]
+    def positionxy(self):
+        return [self.rect.x, self.rect.y]

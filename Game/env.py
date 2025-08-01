@@ -3,13 +3,16 @@ from Game.utils import *
 from Game.levels import get_levels
 
 import pygame
+import numpy as np
+import threading
 
 class Environment:
     def __init__(self, level_index):
-        pygame.init()
-        pygame.display.set_caption('Pico Park')
+        self.level_index = level_index
         self.screen_width, self.screen_height = 1200, 800
         
+        pygame.init()
+        pygame.display.set_caption('Pico Park')
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
         
@@ -21,7 +24,7 @@ class Environment:
         ]
         
         self.agent_actions = ['stand', 'jump', 'left', 'right']
-        self.state_space_shape = (10, 4, 3)  # obstacles, agents, interactables
+        self.state_space_shape = (10*4) + (4*7) + (3*3)  # obstacles, agents, interactables
         self.action_space_shape = len(self.agent_actions)
         
         level = get_levels()[level_index]
@@ -34,6 +37,7 @@ class Environment:
         self.done = False
         self.reward = 0
             
+        threading.Thread(target=self.run_display).start()
             
     def interact_object(self, a):
         if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
@@ -64,13 +68,16 @@ class Environment:
             # Check if fallen off screen end game
             if ap.y > self.screen_height:
                 self.done = True
+                pygame.quit()
                 self.reward -= 5  # Penalty for dying
                 
     
-    def get_state(self, xmin_limit, xmax_limit):
+    def get_state(self):
         state_obstacles = []
         state_agents = []
         state_interactables = []
+        
+        xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
         # Get static obstacles clipped to screen
         for obj in self.static_obstacles:
@@ -83,48 +90,50 @@ class Environment:
                 
         # Get agents data
         for a in self.agents:
-            state_agents.append([a.id, a.x, a.y, a.vx, a.vy, a.is_jumping, a.has_key])
+            state_agents.append([a.id, a.x, a.y, a.vx, a.vy, a.jumping, a.has_key])
             
         for i in range(len(state_agents), 4):  # Pad with empty agents if less than 4
-            state_agents.append([i, 0, 0, 0, 0, 0, 0])
-        
+            state_agents.append([0, 0, 0, 0, 0, 0, 0])
+                    
         # Get interactables data
         state_interactables.append(self.door.positionxy + [self.door.is_open])
-        state_interactables.append((self.button.positionxy + [self.button.is_pressed]) if self.button else [0, 0, 0])
-        state_interactables.append([self.key.positionxy] if self.key else [0, 0, 0])
+        state_interactables.append(self.button.positionxy + [self.button.is_pressed] if self.button else [0, 0, 0])
+        state_interactables.append(self.key.positionxy + [self.key.used] if self.key else [0, 0, 0])
         
-        return [
+        for i in state_interactables: # Set positions outside limits to 0
+            if i[0] < xmin_limit or i[0] > xmax_limit:
+                i[0] = i[1] = 0
+        
+        return np.concatenate((
             normalize_state_obstacles(state_obstacles, xmin_limit, xmax_limit, self.screen_height), # shape 10
             normalize_state_agents(state_agents, xmin_limit, xmax_limit, self.screen_height), # shape 4
             normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height) # shape 3
-        ]
+        ))
                 
     def step(self, agent_id, action_probs):
+        self.reward = 0
         dt = self.clock.tick(60) / 1000 # seconds since last frame
         agent = [a for a in self.agents if a.id == agent_id][0]
 
-        mutual_xcenter = find_mutual_xcenter(self.agents) - (self.screen_width // 2)
-        xmin_limit = mutual_xcenter 
-        xmax_limit = mutual_xcenter + self.screen_width
-        
-        reward = self.get_policy_reward(agent)
+        xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
         action = self.agent_actions[action_probs.argmax()]
         agent.handle_input(action, dt)
         
         self.move_objects(xmin_limit, xmax_limit, dt)
-        self.interact_object()
+        self.interact_object(agent)
         
         self.reward -= 0.1  # Small penalty for each step taken
-        self.reward += max(1, agent.x / self.door.position[0])  # Reward based on distance to door
+        self.reward += max(1, agent.x / self.door.positionxy[0])  # Reward based on distance to door
         
         if not self.agents:  # All agents have exited through the door
             self.done = True
+            pygame.quit()
             
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
             
-        return action, reward, self.done
+        return action, self.reward, self.done
             
             
     def reset(self, level_index):
@@ -145,3 +154,26 @@ class Environment:
             Player((400, 620), 'green')
         ]
        
+    def draw_objects(self, offset, dt):
+        self.screen.fill((240,240,240)) # Beige background
+        
+        for g in self.static_obstacles:
+            # draw with scroll offset
+            pygame.draw.rect(self.screen, (245, 141, 86), (g.x - offset[0], g.y - offset[1], g.width, g.height))
+            
+        self.door.draw(self.screen, offset)
+       
+        if self.key:
+            self.key.draw(self.screen, offset, dt)
+       
+        if self.button:
+            self.button.draw(self.screen, offset)
+            
+        for a in self.agents:
+            self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
+            
+    def run_display(self,):
+        while not self.done:
+            self.clock.tick(60)
+            pygame.display.update()
+            self.draw_objects((0, 0), 0)

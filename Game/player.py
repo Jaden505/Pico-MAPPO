@@ -1,7 +1,6 @@
 from Game.utils import recolor_image, PLAYER_COLOR_MAPS
 
 import pygame
-import uuid
 
 class Player:
     def __init__(self, init_pos, color='blue'):
@@ -49,7 +48,9 @@ class Player:
         self.anim_timer = 0
         self.anim_speed = 0.15  # seconds per frame
         self.has_key = False
-        self.id = uuid.uuid4()
+        
+        # Each of 4 colors different id 1 to 4
+        self.id = color_map.get('id', 1)  # Default to 1 if not specified in color_map
         
         
     def update_sprite(self, dt):
@@ -124,6 +125,7 @@ class Player:
                 self.vy = 0
                 self.rect.y = self.y
 
+
     def cycle_sprites(self, sprites, dt):
         """Helper function to cycle through a list of sprites."""
         self.anim_timer += dt
@@ -132,6 +134,7 @@ class Player:
             self.sprite = sprites[self.cycle_ind]
             self.cycle_ind = (self.cycle_ind + 1) % len(sprites)
             self.anim_timer = 0
+          
           
     @property
     def foot_hitbox(self):

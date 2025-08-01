@@ -7,7 +7,6 @@ class ActorCritic(nn.Module):
         
         print(f"Initializing ActorCritic with input dimension {in_dim} and output dimension {out_dim}")
         
-        self.flatten = nn.Flatten()
         self.model = nn.Sequential(
             nn.Linear(in_dim, 256),
             nn.ReLU(),
@@ -17,7 +16,7 @@ class ActorCritic(nn.Module):
         )
     
     def forward(self, x):
-        x = self.flatten(x)
+        x = torch.from_numpy(x).float()
         logits = self.model(x)
         return logits
     
