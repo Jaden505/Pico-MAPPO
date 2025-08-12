@@ -92,8 +92,8 @@ class Game:
                     sys.exit()
                     
                 action = event_to_action(event, self.player.vx)
-                for a in self.agents_and_player:
-                    a.handle_input(action, dt)
+
+                self.player.handle_input(action, dt)
                 
             if not self.agents_and_player:  # All agents have exited through the door
                 self.exit()

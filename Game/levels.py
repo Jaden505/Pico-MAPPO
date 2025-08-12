@@ -16,7 +16,7 @@ def get_levels():
 
     # Level 1 – Basic key pickup
     levels.append({
-        "static_obstacles": [pygame.Rect(0, 700, 2000, 100)],
+        "static_obstacles": [pygame.Rect(-500, 700, 2500, 100)],
         "door": Door((1800, 700)),
         "key": Key((300, 500)),
         "button": None

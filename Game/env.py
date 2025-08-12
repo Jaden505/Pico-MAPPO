@@ -121,8 +121,6 @@ class Environment:
         
         self.reward -= 0.05  # Small penalty for each step taken
         
-        print([(a.x, a.id) for a in self.agents])  # Debugging output
-        
         if not self.agents:  # All agents have exited through the door
             self.done = True
             pygame.quit()

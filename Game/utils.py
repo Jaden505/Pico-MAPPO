@@ -29,7 +29,7 @@ def recolor_image(surface, color_map):
     del pxarray
     return surface
 
-def find_outer_x_limits(player_agents, screen_width):
+def find_outer_x_limits(player_agents, screen_width, sprite_width=80):
     """Find the mutual x center of all player agents."""
     if not player_agents:
         return 0
@@ -38,14 +38,13 @@ def find_outer_x_limits(player_agents, screen_width):
     x_positions = [a.x for a in player_agents]
     
     # find mutual center of positions
-    padding = screen_width * 0.1
-    sum_x = sum(x_positions)
-    xmin_limit = sum_x / len(x_positions) - screen_width / 2 + padding
-    xmax_limit = sum_x / len(x_positions) + screen_width / 2 + padding
+    avg_pos = sum(x_positions) / len(x_positions)
+    xmin_limit = avg_pos - screen_width / 2 + (sprite_width / 2)
+    xmax_limit = avg_pos + screen_width / 2 - (sprite_width / 2)
+
     return xmin_limit, xmax_limit
     
     
-
 def event_to_action(event, vx):
     """Helper function to convert pygame events to player actions."""
     if event.type == pygame.KEYDOWN:
