@@ -36,14 +36,15 @@ def find_outer_x_limits(player_agents, screen_width):
 
     # first find mutual x center
     x_positions = [a.x for a in player_agents]
-    xmin_limit = min(x_positions)
-    xmax_limit = max(x_positions)
     
-    # then add some margin
-    margin = 100
-    xmin_limit = max(0, xmin_limit - margin)
-    xmax_limit = min(xmax_limit + margin, screen_width)
+    # find mutual center of positions
+    padding = screen_width * 0.1
+    sum_x = sum(x_positions)
+    xmin_limit = sum_x / len(x_positions) - screen_width / 2 + padding
+    xmax_limit = sum_x / len(x_positions) + screen_width / 2 + padding
     return xmin_limit, xmax_limit
+    
+    
 
 def event_to_action(event, vx):
     """Helper function to convert pygame events to player actions."""
