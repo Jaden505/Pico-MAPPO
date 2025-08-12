@@ -1,4 +1,6 @@
 from MAPPO.actorcritic import ActorCritic
+import pygame
+import time
 
 class PPO:
     def __init__(self, env):
@@ -21,7 +23,17 @@ class PPO:
         rewards = []
         
         t = 0
-        while t < self.timesteps_per_batch:
+        
+        pygame.display.update()
+
+        # waint until user quits
+        running = True
+        while t < self.timesteps_per_batch and running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    break
+                    
             self.env.reset(self.env.level_index)
             
             for ep_t in range(self.max_timesteps_per_episode):

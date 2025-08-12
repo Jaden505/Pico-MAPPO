@@ -4,15 +4,12 @@ from Game.levels import get_levels
 
 import pygame
 import numpy as np
-import threading
 
 class Environment:
     def __init__(self, level_index):
         self.level_index = level_index
-        self.screen_width, self.screen_height = 1200, 800
         
-        pygame.init()
-        pygame.display.set_caption('Pico Park')
+        self.screen_width, self.screen_height = 1200, 800
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
         
@@ -20,7 +17,7 @@ class Environment:
             Player((100, 620)), # blue
             Player((200, 620), 'yellow'),
             Player((300, 620), 'red'),
-            Player((400, 620), 'green')
+            Player((700, 620), 'green')
         ]
         
         self.agent_actions = ['stand', 'jump', 'left', 'right']
@@ -36,8 +33,6 @@ class Environment:
         
         self.done = False
         self.reward = 0
-            
-        threading.Thread(target=self.run_display).start()
             
     def interact_object(self, a):
         if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
@@ -65,8 +60,8 @@ class Environment:
             ap.move_and_collide(obstacles, xmin_limit, xmax_limit, dt)
             ap.update_sprite(dt)
         
-            # Check if fallen off screen end game
-            if ap.y > self.screen_height:
+            # Check if off screen end game
+            if ap.y > self.screen_height or ap.y < 0:
                 self.done = True
                 pygame.quit()
                 self.reward -= 5  # Penalty for dying
@@ -118,13 +113,15 @@ class Environment:
         xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
         action = self.agent_actions[action_probs.argmax()]
-        agent.handle_input(action, dt)
+        agent.handle_input('right', dt)
         
+        self.draw_objects((xmin_limit, 0), dt)
         self.move_objects(xmin_limit, xmax_limit, dt)
         self.interact_object(agent)
         
-        self.reward -= 0.1  # Small penalty for each step taken
-        self.reward += max(1, agent.x / self.door.positionxy[0])  # Reward based on distance to door
+        self.reward -= 0.05  # Small penalty for each step taken
+        
+        print([(a.x, a.id) for a in self.agents])  # Debugging output
         
         if not self.agents:  # All agents have exited through the door
             self.done = True
@@ -148,10 +145,10 @@ class Environment:
         
         # Reset agents
         self.agents = [
-            Player((100, 620)), # blue
-            Player((200, 620), 'yellow'),
-            Player((300, 620), 'red'),
-            Player((400, 620), 'green')
+            Player((100, 420)), # blue
+            Player((300, 420), 'yellow'),
+            Player((500, 420), 'red'),
+            Player((700, 420), 'green')
         ]
        
     def draw_objects(self, offset, dt):
@@ -171,9 +168,7 @@ class Environment:
             
         for a in self.agents:
             self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
+
+        pygame.display.flip()
+        
             
-    def run_display(self,):
-        while not self.done:
-            self.clock.tick(60)
-            pygame.display.update()
-            self.draw_objects((0, 0), 0)

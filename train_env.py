@@ -1,3 +1,7 @@
+import pygame
+pygame.init()
+pygame.display.set_caption('Pico Park')
+
 from Game.env import Environment
 from MAPPO.ppo import PPO
 

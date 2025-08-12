@@ -3,7 +3,7 @@ from Game.utils import find_outer_x_limits, event_to_action
 from Game.levels import get_levels
 
 import pygame
-import sys
+import sys, time
 
 class Game:
     def __init__(self, level_index):
@@ -92,7 +92,8 @@ class Game:
                     sys.exit()
                     
                 action = event_to_action(event, self.player.vx)
-                self.player.handle_input(action, dt)
+                for a in self.agents_and_player:
+                    a.handle_input(action, dt)
                 
             if not self.agents_and_player:  # All agents have exited through the door
                 self.exit()

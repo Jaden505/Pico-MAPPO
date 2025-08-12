@@ -8,7 +8,7 @@ def get_levels():
 
     # Level 0 – Simple walk, open door
     levels.append({
-        "static_obstacles": [pygame.Rect(0, 700, 2000, 100)],
+        "static_obstacles": [pygame.Rect(0, 700, 2000, 100), pygame.Rect(1000, 600, 100, 100)],
         "door": Door((1800, 700), is_open=True),
         "key": None,
         "button": None

@@ -90,11 +90,11 @@ class Player:
         # Horizontal collision
         for obs in static_obstacles:
             if self.foot_hitbox.colliderect(obs): 
-                if self.vx > 0: # hit right wall
+                if self.vx > 0 and obs.right > self.x: # hit right wall
                     self.x = obs.left - self.width * 3/4
                     self.pushing = True
 
-                elif self.vx < 0: # hit left wall
+                elif self.vx < 0 and obs.left < self.x: # hit left wall
                     self.x = obs.right - self.width * 1/4
                     self.pushing = True
                     
