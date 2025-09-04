@@ -24,12 +24,13 @@ class Environment:
         self.state_space_shape = (10*4) + (4*7) + (3*3)  # obstacles, agents, interactables
         self.action_space_shape = len(self.agent_actions)
         
-        level = get_levels()[level_index]
+        level = get_levels()[level_index] 
 
         self.static_obstacles = level["static_obstacles"]
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        self.level = level
         
         self.done = False
         self.reward = 0
@@ -63,7 +64,6 @@ class Environment:
             # Check if off screen end game
             if ap.y > self.screen_height or ap.y < 0:
                 self.done = True
-                pygame.quit()
                 self.reward -= 5  # Penalty for dying
                 
     
@@ -123,10 +123,10 @@ class Environment:
         
         if not self.agents:  # All agents have exited through the door
             self.done = True
-            pygame.quit()
             
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
+                self.level['completed'] = True
             
         return action, self.reward, self.done
             
@@ -140,6 +140,7 @@ class Environment:
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        self.level = level
         
         # Reset agents
         self.agents = [
@@ -148,6 +149,10 @@ class Environment:
             Player((500, 420), 'red'),
             Player((700, 420), 'green')
         ]
+        
+        for event in pygame.event.get(): # Must have this to process pygame events
+            if event.type == pygame.QUIT:
+                break
        
     def draw_objects(self, offset, dt):
         self.screen.fill((240,240,240)) # Beige background

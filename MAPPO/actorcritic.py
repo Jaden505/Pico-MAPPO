@@ -20,6 +20,3 @@ class ActorCritic(nn.Module):
         logits = self.model(x)
         return logits
     
-    def softmax(self, logits):
-        exp_logits = torch.exp(logits)
-        return exp_logits / torch.sum(exp_logits, dim=-1, keepdim=True)
