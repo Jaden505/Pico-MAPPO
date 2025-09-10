@@ -112,8 +112,9 @@ class Environment:
 
         xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
-        action = self.agent_actions[action_probs.argmax()]
-        agent.handle_input('right', dt)
+        action_prob_ind = np.random.choice(len(self.agent_actions), p=action_probs)
+        action = self.agent_actions[action_prob_ind]
+        agent.handle_input(action, dt)
         
         self.draw_objects((xmin_limit, 0), dt)
         self.move_objects(xmin_limit, xmax_limit, dt)
@@ -128,7 +129,7 @@ class Environment:
                 self.reward += 10 # Bonus for all agents exiting
                 self.level['completed'] = True
             
-        return action, self.reward, self.done
+        return action_prob_ind, self.reward, self.done
             
             
     def reset(self, level_index):

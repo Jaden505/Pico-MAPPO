@@ -1,10 +1,10 @@
 from MAPPO.actorcritic import ActorCritic
-from MAPPO.utils.math import softmax_log_probilities
 
 from torch.optim import Adam
 import torch
-import pygame
+import torch.nn.functional as F
 import numpy as np
+from torch.distributions import Categorical
 
 class PPO:
     def __init__(self, env):
@@ -21,17 +21,25 @@ class PPO:
         
         
     def init_hyperparams(self):
-        self.timesteps_per_batch = 20
-        self.max_timesteps_per_episode = 10
+        self.timesteps_per_batch = 6000
+        self.max_timesteps_per_episode = 600
         self.n_updates_per_iteration = self.timesteps_per_batch // self.max_timesteps_per_episode
         self.clip = 0.2
-        self.lr = 0.0005
+        self.lr = 0.005
+        self.gamma = 0.98
         
+    def calculate_rtgs(self, ep_rewards):
+        G = 0
+        rewards_to_go = []
+        for r in reversed(ep_rewards):
+            G = r + self.gamma * G
+            rewards_to_go.insert(0, G) 
+            
+        return rewards_to_go
            
     def rollout(self):
         states = []
-        actions = []
-        action_log_probs = []
+        action_logs = []
         rewards = []
         rewards_to_go = []
         batch_lens = []        
@@ -42,61 +50,60 @@ class PPO:
                 self.env.level_index += 1
                 
             self.env.reset(self.env.level_index)
-            done = False
             
-            for ep_t in range(min(self.timesteps_per_batch - t, self.max_timesteps_per_episode)):
+            done = False
+            ep_t = 0
+            ep_rewards = []
+            
+            while ep_t < self.max_timesteps_per_episode and ep_t < (self.timesteps_per_batch - t) and not done:
                 for agent in self.env.agents:
                     state = self.env.get_state()
+                    
                     action_logits = self.actor.forward(state)
-                    soft_log_probs = softmax_log_probilities(action_logits)
-                    action, reward, done = self.env.step(agent.id, soft_log_probs)
+                    action_prob = F.softmax(action_logits, dim=-1)
+                    action, reward, done = self.env.step(agent.id, action_prob.detach().numpy())
+                    action_log = F.log_softmax(action_logits, dim=-1)[action]
                     
                     states.append(state)
-                    actions.append(action)
-                    action_log_probs.append(soft_log_probs)
-                    rewards.append(reward)
-                    
-                    if done:
-                        break
-                
-                if done:
-                    break
-                    
+                    action_logs.append(action_log.float())
+                    ep_rewards.append(reward)
+                    ep_t += 1
+
             t += (ep_t + 1)
-            rewards_to_go += [sum(rewards[i:]) for i in range(len(rewards))]
-                                
             batch_lens.append(ep_t + 1)
-        
-        return states, actions, action_log_probs, rewards, rewards_to_go, batch_lens
+            rewards.append(ep_rewards)
+            rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
+
+        return np.array(states), torch.tensor(action_logs), rewards, torch.tensor(rewards_to_go).float(), batch_lens
     
 
     def learn(self):
         for _ in range(self.n_updates_per_iteration):
-            states, actions, action_log_probs, rewards, rewards_to_go, batch_lens = self.rollout()
-            states = np.array(states)
-            rewards_to_go = torch.tensor(rewards_to_go).float()
+            states, action_logs, rewards, rewards_to_go, batch_lens = self.rollout()
             
-            V = self.critic.forward(states).squeeze() # V is the value function which represents what the critic thinks the expected reward is
-            print(len(states), len(rewards_to_go), V.shape)
+            # Calculate advantage
+            V = self.critic.forward(states).squeeze() # Critic state value
             A_raw = rewards_to_go - V.detach()
-            norm_A = (A_raw - A_raw.mean()) / (A_raw.std() + 1e-10)
-            A = torch.tensor(norm_A).float() # Advantage function is the difference between the expected reward and the actual reward
+            norm_A = (A_raw - A_raw.mean()) / (A_raw.std() + 1e-10) # Normalize advantage
+            A = norm_A.clone() # Advantage estimation
             
-            curr_action_log = self.actor.forward(states)
-            curr_log_probs = softmax_log_probilities(curr_action_log)
+            curr_action = self.actor.forward(states)
+            curr_probs = Categorical(logits=curr_action)
+            curr_action = curr_probs.sample()
+            curr_logs = curr_probs.log_prob(curr_action)
             
-            ratios = torch.exp(curr_log_probs - torch.tensor(action_log_probs).float())
-            surr1 = ratios * A
+            ratios = torch.exp(curr_logs - action_logs)
+            surr1 = ratios * A 
             surr2 = torch.clamp(ratios, 1 - self.clip, 1 + self.clip) * A
             actor_loss = (-torch.min(surr1, surr2)).mean()
             
             # Backpropagation for actor network
-            self.actor_optim.zero_grad() # reset gradients
+            self.actor_optim.zero_grad() # reset gradients 
             actor_loss.backward()
             self.actor_optim.step() # update actor network weights
 
             # Critic loss
-            critic_loss = torch.nn.MSELoss()(V, torch.tensor(rewards_to_go).float())
+            critic_loss = torch.nn.MSELoss()(V, rewards_to_go)
             self.critic_optim.zero_grad()
             critic_loss.backward()
             self.critic_optim.step()
