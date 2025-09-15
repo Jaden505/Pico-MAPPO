@@ -31,7 +31,6 @@ class PPO:
         self.clip = 0.2
         self.lr = 0.005
         self.gamma = 0.98
-        
         self.max_threads = 5
         
     def calculate_rtgs(self, ep_rewards):
@@ -43,31 +42,25 @@ class PPO:
             
         return rewards_to_go
     
-    def gather_experience(self, return_dict, thread_id):
+    def gather_experience(self, return_dict, thread_id, visualize=False):
         ep_rewards = []
         ep_states = []
         ep_action_logs = []
-        print(f"Thread {thread_id} starting experience gathering.")
 
-        env = Environment(level_index=self.highest_level, visualize=False)
+        env = Environment(level_index=self.highest_level, visualize=visualize)
         state = env.get_state()
         done = False
         
-        print('Starting new episode')
         for ep_t in range(self.max_timesteps_per_episode):
             for agent_id in (a.id for a in env.agents):
                 with torch.no_grad():
                     action_logits = self.actor.forward(state)
-                    
-                print(f"Action logits computed")
 
                 action_probs = Categorical(logits=action_logits)
                 action = action_probs.sample()
                 action_log = action_probs.log_prob(action)
                 
                 next_state, reward, done = env.step(agent_id, action.item())
-                
-                print(f"Step {ep_t}: Action taken, reward received: {reward}, done: {done}")
                 
                 ep_states.append(state)
                 ep_action_logs.append(action_log)
@@ -97,13 +90,18 @@ class PPO:
             return_dict = {}
             
             n_live_threads = min(self.max_threads, (self.timesteps_per_batch - t) // self.max_timesteps_per_episode + 1)
-            for i in range(n_live_threads):
+            for i in range(n_live_threads-1):
                 thread = threading.Thread(target=self.gather_experience, args=(return_dict, i))
                 threads.append(thread)
                 thread.start()
+                
+            # Run a batch on the main thread with visualization for debugging
+            self.gather_experience(return_dict, n_live_threads, visualize=True)
+            threads.append(None)  # Placeholder for main thread
             
             for i, thread in enumerate(threads):
-                thread.join()
+                if thread: 
+                    thread.join()
                 ep_states, ep_action_logs, ep_rewards = return_dict[i]
                 
                 states.extend(ep_states)
