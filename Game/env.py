@@ -6,12 +6,14 @@ import pygame
 import numpy as np
 
 class Environment:
-    def __init__(self, level_index):
+    def __init__(self, level_index, visualize):
         self.level_index = level_index
+        self.visualize = visualize
         
         self.screen_width, self.screen_height = 1200, 800
-        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        self.clock = pygame.time.Clock()
+        if visualize:
+            self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+            self.clock = pygame.time.Clock()
         
         self.agents = [
             Player((100, 620)), # blue
@@ -105,18 +107,23 @@ class Environment:
             normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height) # shape 3
         ))
                 
-    def step(self, agent_id, action_probs):
+    def step(self, agent_id, action_ind):
         self.reward = 0
-        dt = self.clock.tick(60) / 1000 # seconds since last frame
         agent = [a for a in self.agents if a.id == agent_id][0]
+        
+        if self.visualize:
+            dt = self.clock.tick(60) / 1000 # seconds since last frame
+        else:
+            dt = 0.016  # Assume ~60 FPS for non-visualized runs
 
         xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
-        action_prob_ind = np.random.choice(len(self.agent_actions), p=action_probs)
-        action = self.agent_actions[action_prob_ind]
+        action = self.agent_actions[action_ind]
         agent.handle_input(action, dt)
         
-        self.draw_objects((xmin_limit, 0), dt)
+        if self.visualize:
+            self.draw_objects((xmin_limit, 0), dt)
+        
         self.move_objects(xmin_limit, xmax_limit, dt)
         self.interact_object(agent)
         
@@ -129,7 +136,7 @@ class Environment:
                 self.reward += 10 # Bonus for all agents exiting
                 self.level['completed'] = True
             
-        return action_prob_ind, self.reward, self.done
+        return self.get_state(), self.reward, self.done
             
             
     def reset(self, level_index):
@@ -151,9 +158,10 @@ class Environment:
             Player((700, 420), 'green')
         ]
         
-        for event in pygame.event.get(): # Must have this to process pygame events
-            if event.type == pygame.QUIT:
-                break
+        if self.visualize:
+            for event in pygame.event.get(): # Must have this to process pygame events
+                if event.type == pygame.QUIT:
+                    break
        
     def draw_objects(self, offset, dt):
         self.screen.fill((240,240,240)) # Beige background

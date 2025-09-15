@@ -1,15 +1,19 @@
 from MAPPO.actorcritic import ActorCritic
+from Game.env import Environment
 
 from torch.optim import Adam
 import torch
 import torch.nn.functional as F
 import numpy as np
 from torch.distributions import Categorical
+import threading
 
 class PPO:
-    def __init__(self, env):
+    def __init__(self):
+        env = Environment(level_index=0, visualize=True)
+        self.highest_level = env.level_index
+        
         self.init_hyperparams()
-        self.env = env
         self.state_dim = env.state_space_shape
         self.action_dim = env.action_space_shape
         
@@ -21,12 +25,14 @@ class PPO:
         
         
     def init_hyperparams(self):
-        self.timesteps_per_batch = 6000
-        self.max_timesteps_per_episode = 600
-        self.n_updates_per_iteration = self.timesteps_per_batch // self.max_timesteps_per_episode
+        self.timesteps_per_batch = 4000
+        self.max_timesteps_per_episode = 900
+        self.n_iterations = 100
         self.clip = 0.2
         self.lr = 0.005
         self.gamma = 0.98
+        
+        self.max_threads = 5
         
     def calculate_rtgs(self, ep_rewards):
         G = 0
@@ -36,49 +42,86 @@ class PPO:
             rewards_to_go.insert(0, G) 
             
         return rewards_to_go
+    
+    def gather_experience(self, return_dict, thread_id):
+        ep_rewards = []
+        ep_states = []
+        ep_action_logs = []
+        print(f"Thread {thread_id} starting experience gathering.")
+
+        env = Environment(level_index=self.highest_level, visualize=False)
+        state = env.get_state()
+        done = False
+        
+        print('Starting new episode')
+        for ep_t in range(self.max_timesteps_per_episode):
+            for agent_id in (a.id for a in env.agents):
+                with torch.no_grad():
+                    action_logits = self.actor.forward(state)
+                    
+                print(f"Action logits computed")
+
+                action_probs = Categorical(logits=action_logits)
+                action = action_probs.sample()
+                action_log = action_probs.log_prob(action)
+                
+                next_state, reward, done = env.step(agent_id, action.item())
+                
+                print(f"Step {ep_t}: Action taken, reward received: {reward}, done: {done}")
+                
+                ep_states.append(state)
+                ep_action_logs.append(action_log)
+                ep_rewards.append(reward)
+                
+                state = next_state
+                
+                if done:
+                    break
+            
+        return_dict[thread_id] = (ep_states, ep_action_logs, ep_rewards)
+            
            
     def rollout(self):
         states = []
         action_logs = []
         rewards = []
         rewards_to_go = []
-        batch_lens = []        
+        batch_lens = []       
         
         t = 0
+        
+        # create n threads to collect experience
+        # if thread ends before timesteps_per_batch is reached, create a new thread
         while t < self.timesteps_per_batch:
-            if 'completed' in self.env.level: # Go to next level if current level is completed
-                self.env.level_index += 1
+            threads = []
+            return_dict = {}
+            
+            n_live_threads = min(self.max_threads, (self.timesteps_per_batch - t) // self.max_timesteps_per_episode + 1)
+            for i in range(n_live_threads):
+                thread = threading.Thread(target=self.gather_experience, args=(return_dict, i))
+                threads.append(thread)
+                thread.start()
+            
+            for i, thread in enumerate(threads):
+                thread.join()
+                ep_states, ep_action_logs, ep_rewards = return_dict[i]
                 
-            self.env.reset(self.env.level_index)
-            
-            done = False
-            ep_t = 0
-            ep_rewards = []
-            
-            while ep_t < self.max_timesteps_per_episode and ep_t < (self.timesteps_per_batch - t) and not done:
-                for agent in self.env.agents:
-                    state = self.env.get_state()
-                    
-                    action_logits = self.actor.forward(state)
-                    action_prob = F.softmax(action_logits, dim=-1)
-                    action, reward, done = self.env.step(agent.id, action_prob.detach().numpy())
-                    action_log = F.log_softmax(action_logits, dim=-1)[action]
-                    
-                    states.append(state)
-                    action_logs.append(action_log.float())
-                    ep_rewards.append(reward)
-                    ep_t += 1
-
-            t += (ep_t + 1)
-            batch_lens.append(ep_t + 1)
-            rewards.append(ep_rewards)
-            rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
+                states.extend(ep_states)
+                action_logs.extend(ep_action_logs)
+                rewards.extend(ep_rewards)
+                rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
+                batch_lens.append(len(ep_rewards))
+                
+                t += len(ep_rewards)
+                
+                if t >= self.timesteps_per_batch:
+                    break
 
         return np.array(states), torch.tensor(action_logs), rewards, torch.tensor(rewards_to_go).float(), batch_lens
     
 
     def learn(self):
-        for _ in range(self.n_updates_per_iteration):
+        for _ in range(self.n_iterations):
             states, action_logs, rewards, rewards_to_go, batch_lens = self.rollout()
             
             # Calculate advantage
