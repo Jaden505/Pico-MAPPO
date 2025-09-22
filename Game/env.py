@@ -16,10 +16,10 @@ class Environment:
             self.clock = pygame.time.Clock()
         
         self.agents = [
-            Player((100, 620)), # blue
-            Player((200, 620), 'yellow'),
-            Player((300, 620), 'red'),
-            Player((700, 620), 'green')
+            Player((100, 600)), # blue
+            Player((250, 600), 'yellow'),
+            Player((400, 600), 'red'),
+            Player((550, 600), 'green')
         ]
         
         self.agent_actions = ['stand', 'jump', 'left', 'right']
@@ -32,6 +32,7 @@ class Environment:
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        self.coins = level["coins"]
         self.level = level
         
         self.done = False
@@ -119,15 +120,19 @@ class Environment:
         xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
         action = self.agent_actions[action_ind]
-        agent.handle_input(action, dt)
+        # agent.handle_input(action, dt)
         
         if self.visualize:
             self.draw_objects((xmin_limit, 0), dt)
         
-        self.move_objects(xmin_limit, xmax_limit, dt)
+        prev_dist = abs(self.door.left - agent.x) # Distance to door before move
+        # self.move_objects(xmin_limit, xmax_limit, dt)
+        curr_dist = abs(self.door.left - agent.x)
+        
         self.interact_object(agent)
         
         self.reward -= 0.05  # Small penalty for each step taken
+        self.reward += (prev_dist - curr_dist) * 0.01 # Small reward for moving towards door
         
         if not self.agents:  # All agents have exited through the door
             self.done = True
@@ -148,14 +153,14 @@ class Environment:
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        self.coins = level["coins"]
         self.level = level
         
-        # Reset agents
         self.agents = [
-            Player((100, 420)), # blue
-            Player((300, 420), 'yellow'),
-            Player((500, 420), 'red'),
-            Player((700, 420), 'green')
+            Player((100, 600)), # blue
+            Player((250, 600), 'yellow'),
+            Player((400, 600), 'red'),
+            Player((550, 600), 'green')
         ]
         
         if self.visualize:
@@ -163,7 +168,7 @@ class Environment:
                 if event.type == pygame.QUIT:
                     break
        
-    def draw_objects(self, offset, dt):
+    def draw_objects(self, offset, dt, show_coins=True):
         self.screen.fill((240,240,240)) # Beige background
         
         for g in self.static_obstacles:
@@ -180,6 +185,11 @@ class Environment:
             
         for a in self.agents:
             self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
+            
+        if show_coins:
+            for c in self.coins:
+                pygame.draw.ellipse(self.screen, (255, 223, 0), (c.x - offset[0], c.y - offset[1], c.width, c.height))
+            
 
         pygame.display.flip()
         

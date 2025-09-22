@@ -16,9 +16,9 @@ class Game:
         
         self.player = Player((100, 620))  # on floor (700 - 80)
         self.agents = [
-            Player((200, 620), 'yellow'),
-            Player((300, 620), 'red'),
-            Player((400, 620), 'green')
+            # Player((200, 620), 'yellow'),
+            # Player((300, 620), 'red'),
+            # Player((400, 620), 'green')
         ]
 
         self.agents_and_player = self.agents + [self.player]
@@ -29,6 +29,7 @@ class Game:
         self.door = level["door"]
         self.key = level["key"]
         self.button = level["button"]
+        self.coins = level["coins"]
         
     def draw_objects(self, offset, dt):
         self.screen.fill((240,240,240)) # Beige background
@@ -47,6 +48,9 @@ class Game:
             
         for a in self.agents_and_player:
             self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
+            
+        for c in self.coins:
+            pygame.draw.ellipse(self.screen, (255, 223, 0), (c.x - offset[0], c.y - offset[1], c.width, c.height))
             
             
     def interact_object(self):

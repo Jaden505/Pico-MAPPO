@@ -25,8 +25,8 @@ class PPO:
         
         
     def init_hyperparams(self):
-        self.timesteps_per_batch = 4000
-        self.max_timesteps_per_episode = 900
+        self.timesteps_per_batch = 400
+        self.max_timesteps_per_episode = 70
         self.n_iterations = 100
         self.clip = 0.2
         self.lr = 0.005
@@ -42,12 +42,12 @@ class PPO:
             
         return rewards_to_go
     
-    def gather_experience(self, return_dict, thread_id, visualize=False):
+    def gather_experience(self, env, return_dict, thread_id):
         ep_rewards = []
         ep_states = []
         ep_action_logs = []
 
-        env = Environment(level_index=self.highest_level, visualize=visualize)
+        env.reset(self.highest_level)
         state = env.get_state()
         done = False
         
@@ -75,6 +75,8 @@ class PPO:
             
            
     def rollout(self):
+        envs = [Environment(level_index=self.highest_level, visualize=(i==self.max_threads-1)) for i in range(self.max_threads)]
+        
         states = []
         action_logs = []
         rewards = []
@@ -84,25 +86,26 @@ class PPO:
         t = 0
         
         # create n threads to collect experience
-        # if thread ends before timesteps_per_batch is reached, create a new thread
         while t < self.timesteps_per_batch:
             threads = []
             return_dict = {}
             
             n_live_threads = min(self.max_threads, (self.timesteps_per_batch - t) // self.max_timesteps_per_episode + 1)
             for i in range(n_live_threads-1):
-                thread = threading.Thread(target=self.gather_experience, args=(return_dict, i))
+                thread = threading.Thread(target=self.gather_experience, args=(envs[i], return_dict, i))
                 threads.append(thread)
                 thread.start()
                 
             # Run a batch on the main thread with visualization for debugging
-            self.gather_experience(return_dict, n_live_threads, visualize=True)
+            self.gather_experience(envs[-1], return_dict, n_live_threads)
             threads.append(None)  # Placeholder for main thread
             
             for i, thread in enumerate(threads):
                 if thread: 
                     thread.join()
-                ep_states, ep_action_logs, ep_rewards = return_dict[i]
+                    ep_states, ep_action_logs, ep_rewards = return_dict[i]
+                else:
+                    ep_states, ep_action_logs, ep_rewards = return_dict[n_live_threads]
                 
                 states.extend(ep_states)
                 action_logs.extend(ep_action_logs)
@@ -114,12 +117,15 @@ class PPO:
                 
                 if t >= self.timesteps_per_batch:
                     break
+                
+            print(f"Collected {t} timesteps")
 
         return np.array(states), torch.tensor(action_logs), rewards, torch.tensor(rewards_to_go).float(), batch_lens
     
 
     def learn(self):
         for _ in range(self.n_iterations):
+            print(f"Starting iteration {_+1}/{self.n_iterations}")
             states, action_logs, rewards, rewards_to_go, batch_lens = self.rollout()
             
             # Calculate advantage

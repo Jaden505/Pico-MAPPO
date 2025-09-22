@@ -4,7 +4,7 @@ class Door:
     def __init__(self, position, is_open=False):
         left, bottom = position
         self.is_open = is_open
-        
+        self.left = left
         width, height = 130, 130
         
         def load_sprite(path):
