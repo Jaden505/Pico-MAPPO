@@ -1,5 +1,5 @@
-from MAPPO.actorcritic import ActorCritic
-from Game.env import Environment
+from agent_training.actorcritic import ActorCritic
+from agent_training.level_scheduler import LevelScheduler
 
 from torch.optim import Adam
 import torch
@@ -9,16 +9,16 @@ from torch.distributions import Categorical
 import threading
 
 class PPO:
-    def __init__(self):
-        env = Environment(level_index=0, visualize=True)
-        self.highest_level = env.level_index
-        
+    def __init__(self, state_space_shape=73, action_space_shape=4):
         self.init_hyperparams()
-        self.state_dim = env.state_space_shape
-        self.action_dim = env.action_space_shape
+    
+        self.state_dim = state_space_shape
+        self.action_dim = action_space_shape
         
         self.actor = ActorCritic(self.state_dim, self.action_dim)
         self.critic = ActorCritic(self.state_dim, 1)
+        
+        self.scheduler = LevelScheduler(start=0)
         
         self.actor_optim = Adam(self.actor.parameters(), lr=self.lr)
         self.critic_optim = Adam(self.critic.parameters(), lr=self.lr)

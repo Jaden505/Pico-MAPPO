@@ -1,9 +1,9 @@
-from Game.player import Player
-from Game.utils import find_outer_x_limits, event_to_action
-from Game.levels import get_levels
+from game.player import Player
+from game.utils import find_outer_x_limits, event_to_action
+from game.levels import get_levels
 
 import pygame
-import sys, time
+import sys
 
 class Game:
     def __init__(self, level_index):
@@ -49,7 +49,7 @@ class Game:
         for a in self.agents_and_player:
             self.screen.blit(a.sprite, (a.x - offset[0], a.y - offset[1]))
             
-        for c in self.coins:
+        for c in self.coins: # Draw yellow circles for coins
             pygame.draw.ellipse(self.screen, (255, 223, 0), (c.x - offset[0], c.y - offset[1], c.width, c.height))
             
             
@@ -80,7 +80,7 @@ class Game:
             if ap.y > self.screen_height:
                 self.exit()
                 
-    def run_game(self):
+    def run(self):
         while True:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
 

@@ -1,11 +1,11 @@
-from Game.player import Player
-from Game.utils import *
-from Game.levels import get_levels
+from game.player import Player
+from game.utils import *
+from game.levels import get_levels
 
 import pygame
 import numpy as np
 
-class Environment:
+class GameEnvironment:
     def __init__(self, level_index, visualize):
         self.level_index = level_index
         self.visualize = visualize
@@ -24,7 +24,7 @@ class Environment:
         
         self.agent_actions = ['stand', 'jump', 'left', 'right']
         self.state_space_shape = (10*4) + (4*7) + (3*3)  # obstacles, agents, interactables
-        self.action_space_shape = len(self.agent_actions)
+        self.action_space_shape = len(self.agent_actions) 
         
         level = get_levels()[level_index] 
 

@@ -1,5 +1,5 @@
-from Game.env import Environment
-from MAPPO.ppo import PPO
+from game.env import Environment
+from agent_training.ppo import PPO
 
 import pygame
 
