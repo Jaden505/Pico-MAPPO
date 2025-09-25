@@ -1,4 +1,4 @@
-from Game.utils import recolor_image, PLAYER_COLOR_MAPS
+from game.utils import recolor_image, PLAYER_COLOR_MAPS
 
 import pygame
 
@@ -74,7 +74,7 @@ class Player:
         if key == 'right':
             self.vx = self.acx * dt
             self.facing_left = False
-        if key == 'jump':
+        if key == 'jump' and not self.jumping:
             self.jumping = True
             self.vy = -self.acy * dt           
         if key == 'stand':

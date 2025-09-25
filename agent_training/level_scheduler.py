@@ -1,15 +1,49 @@
-import random
+# A schedular to gradually increase levels and their difficulty while 20% repeating recent episodes and 10% older episode to prevent forgetting
+
+from collections import deque
+import numpy as np
 
 class LevelScheduler:
-    def __init__(self, start):
-        self.n_levels = 8
-        self.levels_sample_length = 3 # Amount of levels to sample through at a time
-        self.current_level = start
+    def __init__(self, levels, start_idx=0):
+        self.levels = levels
+        self.current_level = levels[start_idx]
+        self.level_idx = start_idx
         
-    def sample_levels(self):
-        # Sample levels around the current level
-        low = max(0, self.current_level - self.levels_sample_length // 2)
-        high = min(self.n_levels, low + self.levels_sample_length)
-        low = max(0, high - self.levels_sample_length) # Adjust low if at end of range
-        return list(range(low, high))
+        self.n_recent_levels = 2 # Number of recent levels to sample from
+        self.success_rate_window = 12 # Number of episodes to consider for success rate
+        self.success_rate_threshold = 0.8 # Success rate threshold to level up
+        self.recent_results = deque(maxlen=self.success_rate_window) # Store recent episode results (1 for success, 0 for fail)
+        
+    def sample_level(self):
+        probs = np.zeros(len(self.levels))
+        probs[self.level_idx] = 0.7 # 70% chance to sample current level
+
+        for i in range(self.level_idx, -1, -1):
+            if self.level_idx - i < self.n_recent_levels:
+                if self.level_idx <= self.n_recent_levels:
+                    probs[i] += 0.3 / self.n_recent_levels  # Distribute 30% chance among recent levels if no older levels 
+                else:
+                    probs[i] += 0.2 / self.n_recent_levels # 20% chance to sample recent levels
+            else:
+                probs[i] += 0.1 / (self.level_idx - self.n_recent_levels) # 10% chance to sample older levels
+                
+        return np.random.choice(self.levels, p=probs)
     
+    def advance_level(self):
+        if self.current_level < self.n_levels - 1:
+            self.level_idx += 1
+            self.current_level = self.levels[self.level_idx]
+            self.recent_results.clear() 
+            print(f"Level up! Moving to level {self.level_idx}")
+            return True
+        else:
+            print("Already at highest level.")
+            return False
+        
+    def add_result(self, success):
+        self.recent_results.append(1 if success else 0)
+        
+        if success:
+            succes_rate = sum(self.recent_results) / len(self.recent_results)
+            if len(self.recent_results) == self.success_rate_window and succes_rate >= self.success_rate_threshold:
+                self.advance_level()

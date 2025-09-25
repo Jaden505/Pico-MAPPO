@@ -5,7 +5,7 @@ from game.levels import get_levels
 import pygame
 import numpy as np
 
-class GameEnvironment:
+class GameEnv:
     def __init__(self, level_index, visualize):
         self.level_index = level_index
         self.visualize = visualize
@@ -134,14 +134,15 @@ class GameEnvironment:
         self.reward -= 0.05  # Small penalty for each step taken
         self.reward += (prev_dist - curr_dist) * 0.01 # Small reward for moving towards door
         
+        completed_level = False 
         if not self.agents:  # All agents have exited through the door
             self.done = True
             
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
-                self.level['completed'] = True
+                completed_level = True
             
-        return self.get_state(), self.reward, self.done
+        return self.get_state(), self.reward, self.done, completed_level
             
             
     def reset(self, level_index):
