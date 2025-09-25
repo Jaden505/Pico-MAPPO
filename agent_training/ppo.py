@@ -82,13 +82,19 @@ class PPO:
         return_dict[thread_id] = (ep_states, ep_action_logs, ep_rewards, completed_level)
             
            
-    def collect_batch_data(self, envs, scheduler):        
+    def collect_batch_data(self, envs):        
+        """Collect batch data by running multiple episodes in parallel using multiple environments
+        Args:
+            envs: List of environment instances to run episodes in parallel
+        Returns:
+            states: Tensor of states collected from the episodes
+            action_logs: Tensor of log probabilities of actions taken
+            rewards_to_go: Tensor of rewards-to-go calculated from the episodes
+        """
         states = []
         action_logs = []
-        rewards = []
-        rewards_to_go = []
-        batch_lens = []       
-        
+        rewards_to_go = []    
+        completions = []  
         t = 0
         
         # create n threads to collect experience
@@ -112,26 +118,27 @@ class PPO:
                     ep_states, ep_action_logs, ep_rewards, completed = return_dict[i]
                 else:
                     ep_states, ep_action_logs, ep_rewards, completed = return_dict[n_live_threads]
-                    
-                scheduler.add_result(1 if completed else 0)
                                     
                 states.extend(ep_states)
                 action_logs.extend(ep_action_logs)
-                rewards.extend(ep_rewards)
                 rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
-                batch_lens.append(len(ep_rewards))
+                completions.append(1 if completed else 0)
                 
                 t += len(ep_rewards)
-                
                 if t >= self.timesteps_per_batch:
                     break
                 
             print(f"Collected {t} timesteps")
 
-        return np.array(states), torch.tensor(action_logs), rewards, torch.tensor(rewards_to_go).float(), batch_lens
-    
+        return (
+            torch.tensor(states, dtype=torch.float),
+            torch.tensor(action_logs, dtype=torch.float),
+            torch.tensor(rewards_to_go, dtype=torch.float),
+            completions
+        )
 
     def learn_actor_critic(self, states, rewards_to_go, action_logs):
+        """ Update the actor and critic networks using the collected batch data"""
         # Calculate advantage
         V = self.critic.forward(states).squeeze() # Critic state value
         A_raw = rewards_to_go - V.detach()

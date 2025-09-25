@@ -16,7 +16,6 @@ class ActorCritic(nn.Module):
         )
     
     def forward(self, x):
-        x = torch.from_numpy(x).float()
         logits = self.model(x)
         return logits
     

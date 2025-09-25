@@ -40,7 +40,7 @@ class LevelScheduler:
             print("Already at highest level.")
             return False
         
-    def add_result(self, success):
+    def record_result(self, success):
         self.recent_results.append(1 if success else 0)
         
         if success:

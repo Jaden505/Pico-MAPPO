@@ -15,11 +15,16 @@ N_ITERATIONS = 100
 
 ppo = PPO()
 scheduler = LevelScheduler(levels, start=0)
-envs = [GameEnv(level_index=scheduler.sample_level(), visualize=(i==MAX_THREADS-1)) for i in range(MAX_THREADS)] # Visualize only last env
+envs = [GameEnv(level=scheduler.sample_level(), visualize=(i==MAX_THREADS-1)) for i in range(MAX_THREADS)] # Visualize only last env
     
 for _ in range(N_ITERATIONS):
     print(f"Starting iteration {_+1}/{N_ITERATIONS}")
-    states, action_logs, rewards, rewards_to_go, batch_lens = ppo.collect_batch_data(envs, scheduler)
+    states, action_logs, rewards_to_go, completions = ppo.collect_batch_data(envs, scheduler)
     ppo.learn_actor_critic(states, rewards_to_go, action_logs)
+    
+    # Record results and reset environments
+    for i, env in enumerate(envs):
+        scheduler.record_result(env.level, completions[i])
+        env.reset(scheduler.sample_level())
 
 pygame.quit()
