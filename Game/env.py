@@ -31,6 +31,7 @@ class GameEnv:
         self.key = level["key"]
         self.button = level["button"]
         self.coins = level["coins"]
+        self.level_idx = level["level_idx"]
         self.level = level
         
         self.done = False
@@ -132,17 +133,15 @@ class GameEnv:
         self.reward -= 0.05  # Small penalty for each step taken
         self.reward += (prev_dist - curr_dist) * 0.01 # Small reward for moving towards door
         
-        self.visualise_state_without_pygame() if not self.visualize else None
-        
-        completed_level = False 
+        success = False 
         if not self.agents:  # All agents have exited through the door
             self.done = True
             
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
-                completed_level = True
+                success = True
             
-        return self.get_state(), self.reward, self.done, completed_level
+        return self.get_state(), self.reward, self.done, success
             
             
     def reset(self, level):
@@ -154,6 +153,7 @@ class GameEnv:
         self.key = level["key"]
         self.button = level["button"]
         self.coins = level["coins"]
+        self.level_idx = level["level_idx"]
         self.level = level
         
         self.agents = [
@@ -192,41 +192,4 @@ class GameEnv:
             
 
         pygame.display.flip()
-        
-    def visualise_state_without_pygame(self):
-        """ Visualize the state without pygame, since cant run multiple windows in parallel
-            So we show it using a live plot with matplotlib instead
-        """
-        state = self.get_state()
-        state_obstacles = state[0:40].reshape((10,4))
-        state_agents = state[40:68].reshape((4,7))
-        state_interactables = state[68:77].reshape((3,3))
-        
-        plt.clf()
-        plt.xlim(0, 1)
-        plt.ylim(0, 1)
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.gca().invert_yaxis()
-        plt.gca().set_facecolor((240/255,240/255,240/255)) # Beige background
-        for o in state_obstacles:
-            if o[2] < o[3]: # Valid obstacle
-                plt.gca().add_patch(plt.Rectangle((o[0], o[2]), o[1]-o[0], o[3]-o[2], color=(245/255, 141/255, 86/255))) # Orange obstacle
-        for a in state_agents:
-            if a[0] != 0: # Valid agent
-                colors = ['blue', 'yellow', 'red', 'green']
-                plt.gca().add_patch(plt.Circle((a[1], a[2]), 0.02, color=colors[int(a[0])-1])) # Agent circle
-        for i, inter in enumerate(state_interactables):
-            if inter[0] != 0: # Valid interactable
-                if i == 0: # Door
-                    color = (0, 1, 0) if inter[2] > 0.5 else (1, 0, 0) # Green if open else red
-                    plt.gca().add_patch(plt.Rectangle((inter[0]-0.02, inter[1]-0.05), 0.04, 0.1, color=color))
-                elif i == 1: # Button
-                    color = (0, 1, 0) if inter[2] > 0.5 else (0, 0, 1) # Green if pressed else blue
-                    plt.gca().add_patch(plt.Circle((inter[0], inter[1]), 0.02, color=color))
-                elif i == 2: # Key
-                    color = (1, 1, 0) if inter[2] < 0.5 else (0.5, 0.5, 0.5) # Yellow if not used else grey
-                    plt.gca().add_patch(plt.Rectangle((inter[0]-0.02, inter[1]-0.02), 0.04, 0.04, color=color))
-        plt.pause(0.001)
-        plt.show(block=False)
-        plt.pause(0.001)
         

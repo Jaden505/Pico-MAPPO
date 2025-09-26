@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch
 
 class ActorCritic(nn.Module):
     def __init__(self, in_dim, out_dim):

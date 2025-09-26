@@ -2,7 +2,6 @@
 # Using the environment defined in game/env.py to gather experience and train the policy and value networks
 
 from agent_training.actorcritic import ActorCritic
-from agent_training.level_scheduler import LevelScheduler
 
 from torch.optim import Adam
 import torch
@@ -12,7 +11,7 @@ from torch.distributions import Categorical
 import threading
 
 class PPO:
-    def __init__(self, state_space_shape=73, action_space_shape=4):
+    def __init__(self, state_space_shape=77, action_space_shape=4):
         self.init_hyperparams()
     
         self.state_dim = state_space_shape
@@ -20,8 +19,6 @@ class PPO:
         
         self.actor = ActorCritic(self.state_dim, self.action_dim)
         self.critic = ActorCritic(self.state_dim, 1)
-        
-        self.scheduler = LevelScheduler(start=0)
         
         self.actor_optim = Adam(self.actor.parameters(), lr=self.lr)
         self.critic_optim = Adam(self.critic.parameters(), lr=self.lr)
@@ -43,7 +40,7 @@ class PPO:
             
         return rewards_to_go
     
-    def gather_experience(self, env, return_dict, thread_id):
+    def gather_experience(self, env, return_dict, thread_id, scheduler):
         """ Collect experience by running one episode with one of the environments
         Args:
             env: Environment instance to run the episode in
@@ -54,22 +51,23 @@ class PPO:
         ep_states = []
         ep_action_logs = []
 
-        env.reset(self.highest_level)
+        env.reset(scheduler.sample_level())
         state = env.get_state()
         done = False
-        completed_level = False
+        success = False
         
-        for ep_t in range(self.max_timesteps_per_episode):
+        for _ in range(self.max_timesteps_per_episode):
             for agent_id in (a.id for a in env.agents):
                 with torch.no_grad():
-                    action_logits = self.actor.forward(state)
+                    action_logits = self.actor.forward(torch.tensor(state, dtype=torch.float))
 
                 action_probs = Categorical(logits=action_logits)
                 action = action_probs.sample()
                 action_log = action_probs.log_prob(action)
                 
-                next_state, reward, done, completed_level = env.step(agent_id, action.item())
-                
+                next_state, reward, done, success = env.step(agent_id, action.item())
+                print(reward)
+            
                 ep_states.append(state)
                 ep_action_logs.append(action_log)
                 ep_rewards.append(reward)
@@ -79,10 +77,10 @@ class PPO:
                 if done:
                     break
             
-        return_dict[thread_id] = (ep_states, ep_action_logs, ep_rewards, completed_level)
+        return_dict[thread_id] = (ep_states, ep_action_logs, ep_rewards, success)
             
            
-    def collect_batch_data(self, envs):        
+    def collect_batch_data(self, envs, scheduler):        
         """Collect batch data by running multiple episodes in parallel using multiple environments
         Args:
             envs: List of environment instances to run episodes in parallel
@@ -93,8 +91,8 @@ class PPO:
         """
         states = []
         action_logs = []
-        rewards_to_go = []    
-        completions = []  
+        rewards_to_go = []
+        completed_levels = {} # key: level_idx, value: success count of successions
         t = 0
         
         # create n threads to collect experience
@@ -102,27 +100,30 @@ class PPO:
             threads = []
             return_dict = {}
             
-            n_live_threads = min(self.max_threads, (self.timesteps_per_batch - t) // self.max_timesteps_per_episode + 1)
+            n_live_threads = min(len(envs), (self.timesteps_per_batch - t) // self.max_timesteps_per_episode + 1)
             for i in range(n_live_threads-1):
-                thread = threading.Thread(target=self.gather_experience, args=(envs[i], return_dict, i))
+                thread = threading.Thread(target=self.gather_experience, args=(envs[i], return_dict, i, scheduler))
                 threads.append(thread)
                 thread.start()
                 
             # Run a batch on the main thread with visualization for debugging
-            self.gather_experience(envs[-1], return_dict, n_live_threads)
+            self.gather_experience(envs[-1], return_dict, n_live_threads, scheduler)
             threads.append(None)  # Placeholder for main thread
             
             for i, thread in enumerate(threads):
                 if thread: 
                     thread.join()
-                    ep_states, ep_action_logs, ep_rewards, completed = return_dict[i]
+                    ep_states, ep_action_logs, ep_rewards, success = return_dict[i]
                 else:
-                    ep_states, ep_action_logs, ep_rewards, completed = return_dict[n_live_threads]
+                    ep_states, ep_action_logs, ep_rewards, success = return_dict[n_live_threads]
+                    
+                env_level = envs[i].level_idx
+                if success and env_level == scheduler.level_idx:
+                    completed_levels[env_level] = completed_levels.get(env_level, 0) + 1
                                     
                 states.extend(ep_states)
                 action_logs.extend(ep_action_logs)
                 rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
-                completions.append(1 if completed else 0)
                 
                 t += len(ep_rewards)
                 if t >= self.timesteps_per_batch:
@@ -134,7 +135,7 @@ class PPO:
             torch.tensor(states, dtype=torch.float),
             torch.tensor(action_logs, dtype=torch.float),
             torch.tensor(rewards_to_go, dtype=torch.float),
-            completions
+            completed_levels
         )
 
     def learn_actor_critic(self, states, rewards_to_go, action_logs):

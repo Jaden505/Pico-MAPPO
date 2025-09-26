@@ -16,9 +16,9 @@ class LevelScheduler:
         
     def sample_level(self):
         probs = np.zeros(len(self.levels))
-        probs[self.level_idx] = 0.7 # 70% chance to sample current level
+        probs[self.level_idx] = (0.7 if self.level_idx > 0 else 1.0) # 70% chance to sample current level (100% if first level)
 
-        for i in range(self.level_idx, -1, -1):
+        for i in range(self.level_idx, 0, -1):
             if self.level_idx - i < self.n_recent_levels:
                 if self.level_idx <= self.n_recent_levels:
                     probs[i] += 0.3 / self.n_recent_levels  # Distribute 30% chance among recent levels if no older levels 
@@ -40,8 +40,9 @@ class LevelScheduler:
             print("Already at highest level.")
             return False
         
-    def record_result(self, success):
-        self.recent_results.append(1 if success else 0)
+    def record_result(self, level_idx, success):
+        if level_idx == self.level_idx:
+            self.recent_results.append(1 if success else 0) # Record only if the level matches current level
         
         if success:
             succes_rate = sum(self.recent_results) / len(self.recent_results)

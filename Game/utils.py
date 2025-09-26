@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import os
 
 PLAYER_COLOR_MAPS = {
     'green': {
@@ -18,6 +19,18 @@ PLAYER_COLOR_MAPS = {
         (38, 142, 236): (179, 179, 98), # dark 
     }
 }
+
+BASE_DIR = os.path.dirname(__file__)
+SPRITES_DIR = os.path.join(BASE_DIR, "sprites")
+
+def load_sprite(name, dimensions=None, color_map=None):
+    path = os.path.join(SPRITES_DIR, name)
+    sprite = pygame.image.load(path).convert_alpha()
+    if dimensions:
+        sprite = pygame.transform.scale(sprite, dimensions)
+    if color_map:
+        sprite = recolor_image(sprite, color_map)
+    return sprite
 
 def recolor_image(surface, color_map):
     surface = surface.copy()

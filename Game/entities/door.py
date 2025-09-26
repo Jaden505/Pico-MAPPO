@@ -1,3 +1,5 @@
+from game.utils import load_sprite
+
 import pygame
 
 class Door:
@@ -7,12 +9,8 @@ class Door:
         self.left = left
         width, height = 130, 130
         
-        def load_sprite(path):
-            img = pygame.image.load(path).convert_alpha()
-            return pygame.transform.scale(img, (width, height))
-        
-        self.sprite_closed = load_sprite('Game/sprites/door_closed.png')
-        self.sprite_open = load_sprite('Game/sprites/door_open.png')
+        self.sprite_closed = load_sprite('door_closed.png')
+        self.sprite_open = load_sprite('door_open.png')
         self.rect = pygame.Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):

@@ -1,3 +1,5 @@
+from game.utils import load_sprite
+
 import pygame
 
 class Button:
@@ -12,12 +14,8 @@ class Button:
         
         bottom += 20 # Adjust button position slightly in the ground
         
-        def load_sprite(path):
-            img = pygame.image.load(path).convert_alpha()
-            return pygame.transform.scale(img, (width, height))
-        
-        self.button = load_sprite('Game/sprites/button.png')
-        self.button_pressed = load_sprite('Game/sprites/button_pressed.png')
+        self.button = load_sprite('button.png', (width, height))
+        self.button_pressed = load_sprite('button_pressed.png', (width, height))
         self.rect = pygame.Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):

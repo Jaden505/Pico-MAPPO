@@ -1,4 +1,4 @@
-from game.utils import recolor_image, PLAYER_COLOR_MAPS
+from game.utils import recolor_image, PLAYER_COLOR_MAPS, load_sprite
 
 import pygame
 
@@ -7,20 +7,16 @@ class Player:
         # Sprites
         color_map = PLAYER_COLOR_MAPS[color] if color != 'blue' else {}
         
-        def load_and_recolor(path):
-            img = pygame.image.load(path).convert_alpha()
-            return recolor_image(img, color_map)
-        
-        self.stand_right = load_and_recolor('Game/sprites/pico_stand.png')
+        self.stand_right = load_sprite('pico_stand.png', color_map=color_map)
         self.stand_left = pygame.transform.flip(self.stand_right, True, False)
         
-        self.walk_right = [load_and_recolor(f'Game/sprites/pico_move{i}.png') for i in range(1, 5)]
+        self.walk_right = [load_sprite(f'pico_move{i}.png', color_map=color_map) for i in range(1, 5)]
         self.walk_left = [pygame.transform.flip(img, True, False) for img in self.walk_right]
         
-        self.push_right = [load_and_recolor(f'Game/sprites/pico_push{i}.png') for i in range(1, 5)]
+        self.push_right = [load_sprite(f'pico_push{i}.png', color_map=color_map) for i in range(1, 5)]
         self.push_left = [pygame.transform.flip(img, True, False) for img in self.push_right]
         
-        self.jump_right = load_and_recolor('Game/sprites/pico_jump.png')
+        self.jump_right = load_sprite('pico_jump.png', color_map=color_map)
         self.jump_left = pygame.transform.flip(self.jump_right, True, False)
         
         self.sprite = self.stand_right
@@ -30,7 +26,7 @@ class Player:
         
         # Orientation
         self.facing_left = False
-        self.jumping = False
+        self.jumping = True # start in air to avoid initial collision issues
         self.pushing = False
         
         self.init_pos = init_pos
@@ -125,7 +121,6 @@ class Player:
                 self.vy = 0
                 self.rect.y = self.y
 
-
     def cycle_sprites(self, sprites, dt):
         """Helper function to cycle through a list of sprites."""
         self.anim_timer += dt
@@ -134,7 +129,6 @@ class Player:
             self.sprite = sprites[self.cycle_ind]
             self.cycle_ind = (self.cycle_ind + 1) % len(sprites)
             self.anim_timer = 0
-          
           
     @property
     def foot_hitbox(self):
