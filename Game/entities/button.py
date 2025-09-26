@@ -1,6 +1,5 @@
 from game.utils import load_sprite
-
-import pygame
+from game.no_pygame_rect import Rect
 
 class Button:
     def __init__(self, position, static_obstacle, mode='appear', appear_height=100):
@@ -16,7 +15,7 @@ class Button:
         
         self.button = load_sprite('button.png', (width, height))
         self.button_pressed = load_sprite('button_pressed.png', (width, height))
-        self.rect = pygame.Rect(left, bottom - height, width, height)
+        self.rect = Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):
         if self.is_pressed:

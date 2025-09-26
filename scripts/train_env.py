@@ -11,7 +11,7 @@ pygame.display.set_caption('Pico Park')
 pygame.display.set_mode((1200, 800))
 
 # Config
-MAX_THREADS = 1
+MAX_THREADS = 2
 N_ITERATIONS = 100
 levels = get_levels()
 

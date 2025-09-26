@@ -1,28 +1,39 @@
-from game.utils import recolor_image, PLAYER_COLOR_MAPS, load_sprite
+from game.utils import PLAYER_COLOR_MAPS, load_sprite
+from game.no_pygame_rect import Rect
 
 import pygame
 
 class Player:
-    def __init__(self, init_pos, color='blue'):
-        # Sprites
+    def __init__(self, init_pos, color='blue', visualize=False):
         color_map = PLAYER_COLOR_MAPS[color] if color != 'blue' else {}
         
-        self.stand_right = load_sprite('pico_stand.png', color_map=color_map)
-        self.stand_left = pygame.transform.flip(self.stand_right, True, False)
-        
-        self.walk_right = [load_sprite(f'pico_move{i}.png', color_map=color_map) for i in range(1, 5)]
-        self.walk_left = [pygame.transform.flip(img, True, False) for img in self.walk_right]
-        
-        self.push_right = [load_sprite(f'pico_push{i}.png', color_map=color_map) for i in range(1, 5)]
-        self.push_left = [pygame.transform.flip(img, True, False) for img in self.push_right]
-        
-        self.jump_right = load_sprite('pico_jump.png', color_map=color_map)
-        self.jump_left = pygame.transform.flip(self.jump_right, True, False)
-        
-        self.sprite = self.stand_right
-        
-        self.width = self.sprite.get_width()
-        self.height = self.sprite.get_height()
+        if visualize:
+            # Sprites    
+            self.stand_right = load_sprite('pico_stand.png', color_map=color_map)
+            self.stand_left = pygame.transform.flip(self.stand_right, True, False)
+            
+            self.walk_right = [load_sprite(f'pico_move{i}.png', color_map=color_map) for i in range(1, 5)]
+            self.walk_left = [pygame.transform.flip(img, True, False) for img in self.walk_right]
+            
+            self.push_right = [load_sprite(f'pico_push{i}.png', color_map=color_map) for i in range(1, 5)]
+            self.push_left = [pygame.transform.flip(img, True, False) for img in self.push_right]
+            
+            self.jump_right = load_sprite('pico_jump.png', color_map=color_map)
+            self.jump_left = pygame.transform.flip(self.jump_right, True, False)
+            
+            self.sprite = self.stand_right
+            
+            self.width = self.sprite.get_width()
+            self.height = self.sprite.get_height()
+            
+            # Extras
+            self.cycle_ind = 0 # Which run sprite image to show in sequence
+            self.cycle_len = len(self.walk_right)
+            self.anim_timer = 0
+            self.anim_speed = 0.15  # seconds per frame
+            print(self.width, self.height)
+        else:
+            self.width, self.height = 80, 96
         
         # Orientation
         self.facing_left = False
@@ -36,17 +47,11 @@ class Player:
         
         self.jump_gravity = 40
         
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect = Rect(self.x, self.y, self.width, self.height)
         
         # Extras
-        self.cycle_ind = 0 # Which run sprite image to show in sequence
-        self.cycle_len = len(self.walk_right)
-        self.anim_timer = 0
-        self.anim_speed = 0.15  # seconds per frame
         self.has_key = False
-        
-        # Each of 4 colors different id 1 to 4
-        self.id = color_map.get('id', 1)  # Default to 1 if not specified in color_map
+        self.id = color_map.get('id', 1) 
         
         
     def update_sprite(self, dt):
@@ -132,7 +137,7 @@ class Player:
           
     @property
     def foot_hitbox(self):
-        return pygame.Rect(
+        return Rect(
             self.rect.x + self.width/4,
             self.rect.top,
             self.rect.width/2.,

@@ -66,7 +66,6 @@ class PPO:
                 action_log = action_probs.log_prob(action)
                 
                 next_state, reward, done, success = env.step(agent_id, action.item())
-                print(reward)
             
                 ep_states.append(state)
                 ep_action_logs.append(action_log)

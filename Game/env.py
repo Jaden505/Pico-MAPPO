@@ -3,7 +3,7 @@ from game.utils import *
 
 import pygame
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 class GameEnv:
     def __init__(self, level, visualize):
@@ -15,10 +15,10 @@ class GameEnv:
             self.clock = pygame.time.Clock()
         
         self.agents = [
-            Player((100, 600)), # blue
-            Player((250, 600), 'yellow'),
-            Player((400, 600), 'red'),
-            Player((550, 600), 'green')
+            Player((100, 600), visualize=visualize), # blue
+            Player((250, 600), 'yellow', visualize=visualize),
+            Player((400, 600), 'red', visualize=visualize),
+            Player((550, 600), 'green', visualize=visualize)
         ]
         
         self.agent_actions = ['stand', 'jump', 'left', 'right']
@@ -36,7 +36,7 @@ class GameEnv:
         
         self.done = False
         self.reward = 0
-            
+
     def interact_object(self, a):
         if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
             self.key.collect(a)
@@ -61,7 +61,9 @@ class GameEnv:
         for ap in self.agents:
             obstacles = self.static_obstacles + [x.rect for x in self.agents if x != ap]
             ap.move_and_collide(obstacles, xmin_limit, xmax_limit, dt)
-            ap.update_sprite(dt)
+            
+            if self.visualize:
+                ap.update_sprite(dt)
         
             # Check if off screen end game
             if ap.y > self.screen_height or ap.y < 0:
@@ -131,7 +133,7 @@ class GameEnv:
         self.interact_object(agent)
         
         self.reward -= 0.05  # Small penalty for each step taken
-        self.reward += (prev_dist - curr_dist) * 0.01 # Small reward for moving towards door
+        self.reward += (prev_dist - curr_dist) * 0.1 # Small reward for moving towards door
         
         success = False 
         if not self.agents:  # All agents have exited through the door
@@ -140,7 +142,11 @@ class GameEnv:
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
                 success = True
-            
+        
+        if not self.visualize:
+            print(self.agents[0].x, self.agents[0].y, action)
+
+                
         return self.get_state(), self.reward, self.done, success
             
             
@@ -157,10 +163,10 @@ class GameEnv:
         self.level = level
         
         self.agents = [
-            Player((100, 600)), # blue
-            Player((250, 600), 'yellow'),
-            Player((400, 600), 'red'),
-            Player((550, 600), 'green')
+            Player((100, 600), visualize=self.visualize), # blue
+            Player((250, 600), 'yellow', visualize=self.visualize),
+            Player((400, 600), 'red', visualize=self.visualize),
+            Player((550, 600), 'green', visualize=self.visualize)
         ]
         
         if self.visualize:
@@ -190,6 +196,4 @@ class GameEnv:
             for c in self.coins:
                 pygame.draw.ellipse(self.screen, (255, 223, 0), (c.x - offset[0], c.y - offset[1], c.width, c.height))
             
-
         pygame.display.flip()
-        

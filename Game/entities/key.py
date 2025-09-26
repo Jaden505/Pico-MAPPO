@@ -1,16 +1,14 @@
 from game.utils import load_sprite
-
-import pygame
+from game.no_pygame_rect import Rect
 
 class Key:
     def __init__(self, position):
         self.position = position
         width, height = 65, 80
         
-        self.sprite = load_sprite('key.png')
-        self.sprite = pygame.transform.scale(self.sprite, (width, height))
+        self.sprite = load_sprite('key.png', dimensions=(width, height))
         
-        self.rect = pygame.Rect(position[0], position[1], width, height)
+        self.rect = Rect(position[0], position[1], width, height)
         self.holder = None  # To track which player holds the key
         self.used = False
 

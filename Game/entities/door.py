@@ -1,6 +1,5 @@
 from game.utils import load_sprite
-
-import pygame
+from game.no_pygame_rect import Rect
 
 class Door:
     def __init__(self, position, is_open=False):
@@ -11,7 +10,7 @@ class Door:
         
         self.sprite_closed = load_sprite('door_closed.png')
         self.sprite_open = load_sprite('door_open.png')
-        self.rect = pygame.Rect(left, bottom - height, width, height)
+        self.rect = Rect(left, bottom - height, width, height)
 
     def draw(self, screen, offset):
         if self.is_open:
