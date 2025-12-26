@@ -86,17 +86,18 @@ def normalize_state_obstacles(state_obstacles, xmin_limit, xmax_limit, screen_he
             normalize_yposition(obj[3], screen_height)
         ]
         normalized.append(norm_obj)
+    
     return np.array(normalized).flatten()
 
-def normalize_state_agents(state_agents, xmin_limit, xmax_limit, screen_height):
+def normalize_state_agents(state_agents, xmin_limit, xmax_limit, screen_height, max_dt, acx, acy):
     normalized = []
     for agent in state_agents:
         norm_agent = [
             agent[0],  # id
             normalize_xposition(agent[1], xmin_limit, xmax_limit),
             normalize_yposition(agent[2], screen_height),
-            agent[3],  # vx
-            agent[4],  # vy
+            agent[3] / (max_dt * acx),  # vx
+            agent[4]  / (max_dt * acy),  # vy
             1 if agent[5] else 0,  # is_jumping
             1 if agent[6] else 0   # has_key
         ]

@@ -1,7 +1,9 @@
-from game.utils import PLAYER_COLOR_MAPS, load_sprite
+from game.utils import PLAYER_COLOR_MAPS, SPRITES_DIR, load_sprite
 from game.no_pygame_rect import Rect
 
 import pygame
+import cv2
+import os
 
 class Player:
     def __init__(self, init_pos, color='blue', visualize=False):
@@ -31,9 +33,10 @@ class Player:
             self.cycle_len = len(self.walk_right)
             self.anim_timer = 0
             self.anim_speed = 0.15  # seconds per frame
-            print(self.width, self.height)
         else:
-            self.width, self.height = 80, 96
+            sprite_path = os.path.join(SPRITES_DIR, 'pico_stand.png')
+            default_sprite = cv2.imread(sprite_path, cv2.IMREAD_UNCHANGED)
+            self.width, self.height = default_sprite.shape[1], default_sprite.shape[0]
         
         # Orientation
         self.facing_left = False
@@ -43,7 +46,7 @@ class Player:
         self.init_pos = init_pos
         self.x, self.y = init_pos[0], init_pos[1]
         self.vx, self.vy = 0, 0
-        self.acx, self.acy = 10000, 45000
+        self.acx, self.acy = 10000, 45000 
         
         self.jump_gravity = 40
         

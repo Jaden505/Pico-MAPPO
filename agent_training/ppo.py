@@ -23,12 +23,13 @@ class PPO:
         self.actor_optim = Adam(self.actor.parameters(), lr=self.lr)
         self.critic_optim = Adam(self.critic.parameters(), lr=self.lr)
         
+        self.old_action_logs = None
         
     def init_hyperparams(self):
-        self.timesteps_per_batch = 400
-        self.max_timesteps_per_episode = 70
+        self.timesteps_per_batch = 3000
+        self.max_timesteps_per_episode = 120
         self.clip = 0.2
-        self.lr = 0.005
+        self.lr = 3e-4
         self.gamma = 0.98
         
     def calculate_rtgs(self, ep_rewards):
@@ -50,6 +51,7 @@ class PPO:
         ep_rewards = []
         ep_states = []
         ep_action_logs = []
+        ep_actions = []
 
         env.reset(scheduler.sample_level())
         state = env.get_state()
@@ -58,10 +60,10 @@ class PPO:
         
         for _ in range(self.max_timesteps_per_episode):
             for agent_id in (a.id for a in env.agents):
-                with torch.no_grad():
-                    action_logits = self.actor.forward(torch.tensor(state, dtype=torch.float))
+                action_logits = self.actor.forward(torch.tensor(state, dtype=torch.float))
 
                 action_probs = Categorical(logits=action_logits)
+                
                 action = action_probs.sample()
                 action_log = action_probs.log_prob(action)
                 
@@ -70,13 +72,14 @@ class PPO:
                 ep_states.append(state)
                 ep_action_logs.append(action_log)
                 ep_rewards.append(reward)
+                ep_actions.append(action)
                 
                 state = next_state
                 
                 if done:
                     break
             
-        return_dict[thread_id] = (ep_states, ep_action_logs, ep_rewards, success)
+        return_dict[thread_id] = (ep_states, ep_actions, ep_action_logs, ep_rewards, success)
             
            
     def collect_batch_data(self, envs, scheduler):        
@@ -89,6 +92,7 @@ class PPO:
             rewards_to_go: Tensor of rewards-to-go calculated from the episodes
         """
         states = []
+        actions = []
         action_logs = []
         rewards_to_go = []
         completed_levels = {} # key: level_idx, value: success count of successions
@@ -112,45 +116,40 @@ class PPO:
             for i, thread in enumerate(threads):
                 if thread: 
                     thread.join()
-                    ep_states, ep_action_logs, ep_rewards, success = return_dict[i]
+                    ep_states, ep_actions, ep_action_logs, ep_rewards, success = return_dict[i]
                 else:
-                    ep_states, ep_action_logs, ep_rewards, success = return_dict[n_live_threads]
+                    ep_states, ep_actions, ep_action_logs, ep_rewards, success = return_dict[n_live_threads]
                     
                 env_level = envs[i].level_idx
                 if success and env_level == scheduler.level_idx:
                     completed_levels[env_level] = completed_levels.get(env_level, 0) + 1
                                     
                 states.extend(ep_states)
+                actions.extend(ep_actions)
                 action_logs.extend(ep_action_logs)
                 rewards_to_go.extend(self.calculate_rtgs(ep_rewards))
                 
                 t += len(ep_rewards)
                 if t >= self.timesteps_per_batch:
                     break
-                
-            print(f"Collected {t} timesteps")
 
         return (
             torch.tensor(states, dtype=torch.float),
+            torch.tensor(actions, dtype=torch.float),
             torch.tensor(action_logs, dtype=torch.float),
             torch.tensor(rewards_to_go, dtype=torch.float),
             completed_levels
         )
 
-    def learn_actor_critic(self, states, rewards_to_go, action_logs):
-        """ Update the actor and critic networks using the collected batch data"""
+    def learn_actor_critic(self, states, actions, rewards_to_go, action_logs):
+        """Update the actor and critic networks using the collected batch data"""
         # Calculate advantage
         V = self.critic.forward(states).squeeze() # Critic state value
         A_raw = rewards_to_go - V.detach()
-        norm_A = (A_raw - A_raw.mean()) / (A_raw.std() + 1e-10) # Normalize advantage
-        A = norm_A.clone() # Advantage estimation
+        A = (A_raw - A_raw.mean()) / (A_raw.std() + 1e-10) # Normalize advantage
         
-        curr_action = self.actor.forward(states)
-        curr_probs = Categorical(logits=curr_action)
-        curr_action = curr_probs.sample()
-        curr_logs = curr_probs.log_prob(curr_action)
-        
-        ratios = torch.exp(curr_logs - action_logs)
+        old_action_logs = self.old_action_logs if self.old_action_logs else action_logs.clone()
+        ratios = torch.exp(action_logs - old_action_logs)
         surr1 = ratios * A 
         surr2 = torch.clamp(ratios, 1 - self.clip, 1 + self.clip) * A
         actor_loss = (-torch.min(surr1, surr2)).mean()
@@ -165,4 +164,8 @@ class PPO:
         self.critic_optim.zero_grad()
         critic_loss.backward()
         self.critic_optim.step()
+        
+        self.old_action_logs = action_logs.clone().detach()
+        
+        print(f"Actor loss: {actor_loss.item():.3f}, Critic loss: {critic_loss.item():.3f}")
             

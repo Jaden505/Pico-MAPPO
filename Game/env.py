@@ -36,6 +36,7 @@ class GameEnv:
         
         self.done = False
         self.reward = 0
+        self.MAX_DT = 1/60  # cap max dt to avoid large jumps
 
     def interact_object(self, a):
         if self.key and a.rect.colliderect(self.key.rect) and not self.key.holder: # Get key
@@ -80,7 +81,7 @@ class GameEnv:
         
         # Get static obstacles clipped to screen
         for obj in self.static_obstacles:
-            if obj.right > xmin_limit and obj.height > 0:
+            if xmin_limit < obj.left < xmax_limit  and obj.height > 0:
                 clipped_obj = [max(xmin_limit, obj.left), min(xmax_limit, obj.right), obj.top, obj.bottom]
                 state_obstacles.append(clipped_obj)
                 
@@ -89,7 +90,8 @@ class GameEnv:
                 
         # Get agents data
         for a in self.agents:
-            state_agents.append([a.id, a.x, a.y, a.vx, a.vy, a.jumping, a.has_key])
+            norm_id = a.id / len(self.agents)
+            state_agents.append([norm_id, a.x, a.y, a.vx, a.vy, a.jumping, a.has_key])
             
         for i in range(len(state_agents), 4):  # Pad with empty agents if less than 4
             state_agents.append([0, 0, 0, 0, 0, 0, 0])
@@ -102,10 +104,12 @@ class GameEnv:
         for i in state_interactables: # Set positions outside limits to 0
             if i[0] < xmin_limit or i[0] > xmax_limit:
                 i[0] = i[1] = 0
+                
+        acx, acy = self.agents[0].acx, self.agents[0].acy 
         
         return np.concatenate((
             normalize_state_obstacles(state_obstacles, xmin_limit, xmax_limit, self.screen_height), # shape 10
-            normalize_state_agents(state_agents, xmin_limit, xmax_limit, self.screen_height), # shape 4
+            normalize_state_agents(state_agents, xmin_limit, xmax_limit, self.screen_height, self.MAX_DT, acx, acy), # shape 4
             normalize_state_interactables(state_interactables, xmin_limit, xmax_limit, self.screen_height) # shape 3
         ))
                 
@@ -115,8 +119,9 @@ class GameEnv:
         
         if self.visualize:
             dt = self.clock.tick(60) / 1000 # seconds since last frame
+            dt = min(dt, self.MAX_DT)  
         else:
-            dt = 0.016  # Assume ~60 FPS for non-visualized runs
+            dt = self.MAX_DT  # fixed timestep for non-visualized
 
         xmin_limit, xmax_limit = find_outer_x_limits(self.agents, self.screen_height)
         
@@ -142,10 +147,6 @@ class GameEnv:
             if all([a.y < self.screen_height for a in self.agents]):
                 self.reward += 10 # Bonus for all agents exiting
                 success = True
-        
-        if not self.visualize:
-            print(self.agents[0].x, self.agents[0].y, action)
-
                 
         return self.get_state(), self.reward, self.done, success
             
