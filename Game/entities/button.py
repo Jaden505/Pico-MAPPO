@@ -1,5 +1,5 @@
 from game.utils import load_sprite
-from game.no_pygame_rect import Rect
+from game.entities.headless_rect import Rect
 
 class Button:
     def __init__(self, position, static_obstacle, mode='appear', appear_height=100):

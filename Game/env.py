@@ -138,7 +138,7 @@ class GameEnv:
         self.interact_object(agent)
         
         self.reward -= 0.05  # Small penalty for each step taken
-        self.reward += (prev_dist - curr_dist) * 0.1 # Small reward for moving towards door
+        self.reward += (prev_dist - curr_dist) * 0.2 # Small reward for moving towards door
         
         success = False 
         if not self.agents:  # All agents have exited through the door

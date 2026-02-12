@@ -1,5 +1,5 @@
 from game.utils import load_sprite
-from game.no_pygame_rect import Rect
+from game.entities.headless_rect import Rect
 
 class Door:
     def __init__(self, position, is_open=False):

@@ -19,7 +19,7 @@ levels = get_levels()
 ppo = PPO()
 scheduler = LevelScheduler(levels, start_idx=0)
 
-envs = [GameEnv(level=scheduler.sample_level(), visualize=False) for i in range(MAX_THREADS)] # Visualize only last env
+envs = [GameEnv(level=scheduler.sample_level(), visualize=False) for i in range(MAX_THREADS)]
     
 for _ in range(N_ITERATIONS):
     print(f"Starting iteration {_+1}/{N_ITERATIONS}")

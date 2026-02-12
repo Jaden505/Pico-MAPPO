@@ -10,4 +10,5 @@ parser.add_argument('--level_index', type=int, default=0, help='Index of the lev
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    Game(args.level_index, visualize=True).run()
+    Game(args.level_index).run()
+    

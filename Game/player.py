@@ -1,5 +1,5 @@
 from game.utils import PLAYER_COLOR_MAPS, SPRITES_DIR, load_sprite
-from game.no_pygame_rect import Rect
+from game.entities.headless_rect import Rect
 
 import pygame
 import cv2

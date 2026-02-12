@@ -1,5 +1,5 @@
 from game.entities import Door, Key, Button
-from game.no_pygame_rect import Rect
+from game.entities.headless_rect import Rect
 
 
 def get_levels():
